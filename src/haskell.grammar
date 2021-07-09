@@ -1,0 +1,130 @@
+@top Program {
+    (lexeme | whitespace)*
+}
+
+
+lexeme {
+    qvarid |
+    qconid | 
+    qvarsym | 
+    qconsym |
+    literal | 
+    special | 
+    reservedop | 
+    reservedid
+}
+
+literal {
+    integer |
+    float |
+    char|
+    string
+}
+
+
+
+whitespace {
+    whitestuff whitestuff*
+}
+
+whitestuff {
+    whitechar |
+    comment |
+    ncomment
+}
+
+whitechar {
+    newline |
+    vertab |
+    space |
+    tab |
+    uniWhite
+}
+
+newline {
+    return linefeed |
+    return |
+    linefeed |
+    formfeed
+}
+
+
+
+comment {
+    "TODO"
+}
+
+anyseq {"TODO"}
+
+any {
+    graphic |
+    space |
+    tab
+}
+
+graphic {
+    small |
+    large |
+    symbol |
+    digit |
+    special |
+    quot
+}
+
+
+
+small {
+    ascSmall |
+    uniSmall |
+    underline
+}
+
+
+
+large {
+    ascLarge |
+    uniLarge
+}
+
+symbol {
+    ascSymbol |
+    "uniSymbol TODO"
+}
+
+digit {
+    ascDigit |
+    uniDigit
+}
+
+
+
+@tokens {
+    special {"(" | ")" | "," | ";" | "[" | "]" | "`" | "{" | "}"}
+    return {"\r"}
+    linefeed {"\n"}
+    formfeed {"\f"}
+    vertab {"|"}
+    space {" "}
+    tab {"  "}
+    uniWhite {std.whitespace}
+    dashes {"--"("-")*}
+    opecom {"{-"}
+    closecom {"-}"}
+    quot {"\"" | "\'"        "?????????????????"} 
+    ascSmall {std.asciiLowercase}
+    uniSmall {"TODO"}
+    underline {"_"}
+    ascLarge {std.asciiUppercase}
+    uniLarge {"TODO"}
+    ascSymbol {"!" | "#" | "$" | "%" | "&" | "⋆" | "+" | "." | "/" |
+                "<" | "=" | ">" | "?" | "@" | "\" | "^" | "|" | "-" |
+                "~" | ":"}
+    uniSymbol{"TODO"}
+    ascDigit {std.digit}
+    uniDigit {"TODO"}  
+    octit {[0..7]}  
+    hexit {digit | [A..F] | [a..f]}
+    
+
+}
+
