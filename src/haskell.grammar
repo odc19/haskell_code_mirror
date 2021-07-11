@@ -97,6 +97,100 @@ digit {
 }
 
 
+varid {
+    small (small | large | digit | "\'")* "WITHOUT reversedid"
+}
+
+conid {
+    large (small | large | digit | "\'")*
+}
+
+reservedid {
+    case | class | data | default | deriving | do | else |
+    foreign | if | import | in | infix | infixl |	
+    infixr | instance | let | module | newtype | of |
+    then | type | where | underline
+}
+
+
+tyvar {
+    varid
+}
+
+tycon {
+    conid
+}
+
+tycls {
+    conid
+}
+
+modid {
+    (conid ".") conid
+}
+
+qvarid {
+    (modid ".")? varid
+}
+
+qconid {
+    (modid ".")? conid
+}
+
+qtycon {
+    (modid ".")? tycon
+}
+
+qtycls {
+    (modid ".")? tycls
+}
+
+qvarsym {
+    (modid ".")? varsym
+}
+
+qconsym {
+    (modid ".")? consym
+}
+
+
+decimal {
+    digit (digit)*
+}
+
+octal {
+    octit (octit)*
+}
+
+hexadecimal {
+    hexit (hexit)*
+}
+
+integer {
+    decimal | "0o" octal | "0O" octal | "0x" hexadecimal | "0X" hexadecimal 
+}
+
+float {
+    decimal "." decimal (exponent)?
+}
+
+exponent {
+    ("e" | "E") ("+" | "-")? decimal
+}
+
+char {
+    "\'" (graphic | space | escape) "\'" "TODO"
+}
+
+string {
+    "\"" (graphic | space | escape) "\"" "TODO"
+}
+
+escape {
+    "\" (charesc | ascii | decimal | "o" octal | "x" hexadecimal)
+}
+
+
 
 @tokens {
     special {"(" | ")" | "," | ";" | "[" | "]" | "`" | "{" | "}"}
@@ -124,7 +218,12 @@ digit {
     uniDigit {"TODO"}  
     octit {[0..7]}  
     hexit {digit | [A..F] | [a..f]}
-    
-
-}
+    charesc {"a" | "b" | "f" | "n" | "r" | "t" | "v" | "\" | "\"" | "\'" | "&"}
+    ascii {"^cntrl" | "NUL" | "SOH" | "STX" | "ETX" | "EOT" | "ENQ" | 
+    "ACK" |	"BEL" | "BS" | "HT" | "LF" | "VT" | "FF" | "CR" | "SO" |
+    "SI" | "DLE" | "DC1" | "DC2" | "DC3" | "DC4" | "NAK" | "SYN" | "ETB" | 
+    "CAN"| "EM" | "SUB" | "ESC" | "FS" | "GS" | "RS" | "US" | "SP" | "DEL"}
+    cntrl {ascLarge | "@" | "[" | "]" | "\" | "^" | "_"}
+    gap "\" whitechar (whitechar)* "\"
+    }
 
