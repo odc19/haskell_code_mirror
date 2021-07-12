@@ -190,6 +190,97 @@ escape {
     "\" (charesc | ascii | decimal | "o" octal | "x" hexadecimal)
 }
 
+gap {
+    "\" whitechar (whitechar)* "\"
+}
+
+
+
+exp {
+    infixexp "::" (context "=>")? type |
+    infixexp
+}
+
+infixexp {
+    lexp qop infixexp |
+    "-" infixexp |
+    lexp|
+    exp qop exp
+}
+
+lexp {
+    "\" (apat)+ "->" exp |
+    "let" decls "in" exp |
+    "if" exp (";")? "then" exp (";")? "else" exp |
+    "case" exp "of" "{" alts "}" |
+    "do {" stmts "}" |
+    fexp
+}
+
+fexp {
+    (fexp)? aexp
+}
+
+aexp {
+    qvar |
+    gcon |
+    literal |
+    "(" exp ")" |
+    "(" exp ("," exp)+ ")" |
+    "[" exp ("," exp)? ".." (exp)? "]" |
+    "[" exp "|" qual ("," qual)+ "]" |
+    "(" infixexp qop")" |
+    qcon "{}" |
+    qcon "{" fbind ("," fbind)* "}" |
+    aexp "{" fbind ("," fbind)* "}"
+}
+
+var {
+    varid | "(" varsym ")"
+}
+
+qvar {
+    qvarid | "(" qvarsym ")"
+}
+
+con {
+    conid | "(" consym ")"
+}
+
+qcon {
+    qconid | "(" gconsym ")"
+}
+
+varop {
+    varsym | "`" varid "`"
+}
+
+qvarop {
+    qvarsym | "`" qvarid "`"
+}
+
+conop {
+    consym | "`" conid "`"
+}
+
+qconop {
+    gconsym | "`" qconid "`"
+}
+
+op {
+    varop | conop
+}
+
+qop {
+    qvarop | qconop
+}
+
+gconsym {
+    ":" | qconsym 
+}
+
+
+
 
 
 @tokens {
@@ -224,6 +315,7 @@ escape {
     "SI" | "DLE" | "DC1" | "DC2" | "DC3" | "DC4" | "NAK" | "SYN" | "ETB" | 
     "CAN"| "EM" | "SUB" | "ESC" | "FS" | "GS" | "RS" | "US" | "SP" | "DEL"}
     cntrl {ascLarge | "@" | "[" | "]" | "\" | "^" | "_"}
-    gap "\" whitechar (whitechar)* "\"
+    gcon { "()" | "[]" | "(," (",")* ")" | qcon}
+    
     }
 
