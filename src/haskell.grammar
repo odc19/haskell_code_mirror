@@ -279,9 +279,80 @@ gconsym {
     ":" | qconsym 
 }
 
+qual {
+    pat "<-" exp |
+    "let" decls |
+    exp
+}
 
+alts {
+    alt [";" alt]*
+}
 
+alt {
+    pat "->" exp "[where" decls "]" |
+    pat gdpat "[where" decls "]" |
+    ""
+}
 
+gdpat {
+    guards "->" exp "[" gdpat "]"
+}
+
+guards {
+    "|" guard ["," guard]*
+}
+
+guard {
+    pat "<-" infixexp |
+    "let" decls |
+    infixexp
+}
+
+stmts {
+    (stmt)* exp (";")? 
+}
+
+stmt {
+    exp ";" |
+    pat "<-" exp ";" |
+    "let" decls ";" |
+    ";"
+}
+
+fbind {
+    qvar "=" exp
+}
+
+pat {
+    lpat qconop pat |
+    lpat
+}
+
+lpat {
+    apat |
+    "-" (integer | float) |
+    gcon "{}" |
+    gcon "{" apat ("," apat)* "}" 
+
+}
+
+apat {
+    var "[@" apat "]" |
+    gcon |
+    qcon "{}" |
+    qcon "{" fpat ("," fpat)* "}"
+    literal |
+    "_" |
+    "(" pat ")" |
+    "(" pat ("," pat)+ ")" |
+    "[" pat ("," pat)* "]" |
+    "~" apat  
+}
+
+fpat {
+    qvar "=" pat
+}
 
 @tokens {
     special {"(" | ")" | "," | ";" | "[" | "]" | "`" | "{" | "}"}
