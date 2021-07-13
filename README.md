@@ -1,6 +1,6 @@
-# lezer-json
+# lezer-haskell
 
-This is a JSON grammar for the [lezer](https://lezer.codemirror.net/) parser system.
+This is a Haskell grammar for the [lezer](https://lezer.codemirror.net/) parser system.
 
 Reference:
 - https://www.json.org/json-en.html
