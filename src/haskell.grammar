@@ -354,6 +354,87 @@ fpat {
     qvar "=" pat
 }
 
+module {
+    "module" modid (exports)? "where" body |
+    body
+}
+
+body {
+    "{" impdecls ";" topdecls "}" |
+    "{" impdecls "}" |
+    "{" topdecls "}"
+}
+
+topdecls {
+    topdecl (";" topdecl)*
+}
+
+topdecl {
+    "type" simpletype "=" type |
+    "data" (context "=>")? simpletype ("=" constrs)? ("deriving")? |
+    "newtype" (context "=>")? simpletype "=" newconstr ("deriving")? |
+    "class" (scontext "=>")? tycls tyvar ("where" cdecls)? |
+    "instance" (scontext "=>")? qtycls inst ("where" idecls)? |
+    "default" "(" (type)? ")" |
+    "default" "(" type ("," type)* ")" |
+    "foreign" fdecl |
+    decl
+}
+
+decls {
+    "{" (decl)? "}" |
+    "{" decl (";" decl)* "}"
+}
+
+decl {
+    gendecl |
+    (funlhs | pat) rhs
+}
+
+cdecls {
+    "{" (cdecl)? "}" |
+    "{" cdecl (";" cdecl)* "}"
+}
+
+cdecl {
+    gendecl |
+    (funlhs | var) rhs
+}
+
+idecls {
+    "{" (idecl)? "}" |
+    "{" idecl (";" idecl)* "}"
+}
+
+idecl {
+    (funlhs | var) rhs |
+    ""
+}
+
+gendecl {
+    vars "::" (context "=>")? type |
+    fixity (integer)? ops |
+    ""
+}
+
+ops {
+    op ("," op)*
+}
+
+vars {
+    var ("," var)*
+}
+
+fixity {
+    infixl | 
+    infixr |
+    infix
+}
+
+
+
+
+
 @tokens {
     special {"(" | ")" | "," | ";" | "[" | "]" | "`" | "{" | "}"}
     return {"\r"}
