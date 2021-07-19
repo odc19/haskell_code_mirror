@@ -530,6 +530,93 @@ gdrhs {
     guards "=" exp ("[" gdrhs "]")?
 }
 
+impdecls {
+    impdecl (";" impdecl)*
+}
+
+impdecl {
+    "import" ("qualified")? modid ("as" modid)? (impspec)? |
+}
+
+impspec {
+    "(" ")" |
+    "(" import ("," import)* (",")? ")" |
+    "hiding" "(" ")" |
+    "hiding" "(" import ("," import)* (",")? ")"
+}
+
+import {
+    var |
+    tycon "[" "(..)" "|" "(" ")" "]" |
+    tycon "[" "(..)" "|" "(" cname ("," cname)* ")" "]" |
+    tycls "[" "(..)" "|" "(" ")" "]" |
+    tycls "[" "(..)" "|" "(" var ("," var)* ")" "]"
+}
+
+cname {
+    var |
+    con
+}
+
+chname {
+    (chchar)* ".h" 
+}
+
+cid {
+    letter (letter | ascDigit)*
+}
+
+chchar {
+    letter | ascSymbol
+}
+
+letter {
+    ascSmall |
+    ascLarge |
+    "_"
+}
+
+topdecl {
+    "foreign" fdecl
+}
+
+fdecl {
+    "import" callconv (safety)? impent var "::" ftype |
+    "export" callconv expent var "::" ftype
+}
+
+impent {
+    (string)?
+}
+
+expent {
+    (string)?
+}
+
+ftype {
+    frtype |
+    fatype "->" ftype
+}
+
+frtype {
+    fatype |
+    "()"
+}
+
+fatype {
+    qtycon (atype)*
+}
+
+impent {
+    "\"" ("static")? ("chname")? ("&")? (cid)? "\"" |
+    "\"" dynamic "\"" |
+    "\"" wrapper "\"" 
+} 
+
+expent {
+    "\"" (cid)? "\""
+}
+
 @tokens {
     special {"(" | ")" | "," | ";" | "[" | "]" | "`" | "{" | "}"}
     return {"\r"}
@@ -564,5 +651,7 @@ gdrhs {
     cntrl {ascLarge | "@" | "[" | "]" | "\" | "^" | "_"}
     gcon { "()" | "[]" | "(," (",")* ")" | qcon}
     gtycon { "()" | "[]" | "(->)" | "(," (",")* ")" | qtycon}
+    callconv { "ccall" | "stdcall" | "cplusplus" | "jvm" | "dotnet"}
+    safety { "safe" | "unsafe"}
     }
 
