@@ -375,7 +375,7 @@ topdecl {
     "newtype" (context "=>")? simpletype "=" newconstr ("deriving")? |
     "class" (scontext "=>")? tycls tyvar ("where" cdecls)? |
     "instance" (scontext "=>")? qtycls inst ("where" idecls)? |
-    "default" "(" (type)? ")" |
+    "default" "(" ")" |
     "default" "(" type ("," type)* ")" |
     "foreign" fdecl |
     decl
@@ -392,7 +392,7 @@ decl {
 }
 
 cdecls {
-    "{" (cdecl)? "}" |
+    "{"  "}" |
     "{" cdecl (";" cdecl)* "}"
 }
 
@@ -402,7 +402,7 @@ cdecl {
 }
 
 idecls {
-    "{" (idecl)? "}" |
+    "{" "}" |
     "{" idecl (";" idecl)* "}"
 }
 
@@ -431,9 +431,104 @@ fixity {
     infix
 }
 
+type {
+    btype ("->" type)?
+}
 
+btype {
+    (btype)? atype
+}
 
+ atype {
+    gtycon |
+    tyvar |
+    "(" type ("," type)+ ")" | 
+    "[" type "]" |
+    "(" type ")" 
+ } 
 
+ context {
+     class |
+     "("  ")" |
+     "(" class ("," class)* ")"
+ }
+
+ class {
+     qtycls tyvar |
+     qtycls "(" tyvar atype (atype)* ")"
+ }
+
+simpletype {
+    tycon |
+    tycon tyvar (tyvar)*
+}
+
+constrs {
+    constr ("|" constr)*
+}
+
+constr {
+    con (("!")? atype)* |
+    (btype | "!" atype) conop (btype | "!" atype) |
+    con "{" "}" |
+    con "{" fielddecl ("," fielddecl)* "}"
+}
+
+fielddecl {
+    vars "::" (type | "!" atype)
+}
+
+deriving {
+    "deriving" (dclass | dclasses)
+}
+
+dclasses {
+    "(" ")" |
+    "(" dclass ("," dclass)* ")"
+}
+
+dclass {
+    qtycls
+}
+
+newconstr {
+    con atype |
+    con "{" var "::" type "}"
+}
+
+scontext {
+    simpleclass |
+    "(" ")" |
+    "(" simpleclass ("," simpleclass)* ")"
+}
+
+simpleclass {
+    qtycls tyvar
+}
+
+inst {
+    gtycon |
+    "(" gtycon ")" |
+    "("gtycon (tyvar)* ")" |
+    "(" tyvar ("," tyvar)+ ")" |
+    "[" tyvar "]" |
+    "(" tyvar "->" tyvar ")"
+}
+
+funlhs {
+    var apat "{" apat "}" |
+    pat varop pat |
+    "(" funlhs ")" apat "{" apat "}"
+}
+
+rhs {
+    "=" exp ("[" "where" decls "]")? |
+    gdrhs ("[" "where" decls "]")?
+}
+
+gdrhs {
+    guards "=" exp ("[" gdrhs "]")?
+}
 
 @tokens {
     special {"(" | ")" | "," | ";" | "[" | "]" | "`" | "{" | "}"}
@@ -468,6 +563,6 @@ fixity {
     "CAN"| "EM" | "SUB" | "ESC" | "FS" | "GS" | "RS" | "US" | "SP" | "DEL"}
     cntrl {ascLarge | "@" | "[" | "]" | "\" | "^" | "_"}
     gcon { "()" | "[]" | "(," (",")* ")" | qcon}
-    
+    gtycon { "()" | "[]" | "(->)" | "(," (",")* ")" | qtycon}
     }
 
