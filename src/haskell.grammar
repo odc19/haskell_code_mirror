@@ -2,6 +2,9 @@
     (lexeme | whitespace)*
 }
 
+@skip {
+    whitespace
+}
 
 lexeme {
     qvarid |
