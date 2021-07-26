@@ -1,10 +1,16 @@
+@precedence {
+    modid, conid, ascLarge
+}
 @top Program {
     (lexeme | whitespace)*
 }
 
-@skip {
-    whitespace
+
+module {
+    "module" modid (exports)? "where" body |
+    body
 }
+
 
 lexeme {
     qvarid |
@@ -14,7 +20,8 @@ lexeme {
     literal | 
     special | 
     reservedop | 
-    reservedid
+    reservedid | 
+    module
 }
 
 literal {
@@ -54,10 +61,21 @@ newline {
 
 
 comment {
-    "TODO"
+    dashes (any (any)*)? newline
 }
 
-anyseq {"TODO"}
+ncomment {
+    opencom ANYseq (ncomment ANYseq)* closecom
+}
+
+ANYseq {
+    (ANY)*
+}
+
+ANY {
+    graphic |
+    whitechar
+}
 
 any {
     graphic |
@@ -85,36 +103,30 @@ small {
 
 
 large {
-    ascLarge |
-    uniLarge
+    !ascLarge ascLarge 
 }
 
 symbol {
     ascSymbol |
-    "uniSymbol TODO"
-}
-
-digit {
-    ascDigit |
-    uniDigit
+    uniSymbol
 }
 
 
 varid {
-    small (small | large | digit | "\'")* "WITHOUT reversedid"
+    small (small | large | digit | "\'")* 
 }
 
 conid {
-    large (small | large | digit | "\'")*
+    !conid large (small | large | digit | "\'")*
 }
 
-reservedid {
-    case | class | data | default | deriving | do | else |
-    foreign | if | import | in | infix | infixl |	
-    infixr | instance | let | module | newtype | of |
-    then | type | where | underline
+varsym {
+    symbol (symbol)*
 }
 
+consym {
+    ":" (symbol)*
+}
 
 tyvar {
     varid
@@ -129,7 +141,7 @@ tycls {
 }
 
 modid {
-    (conid ".") conid
+    !modid (conid ".")* conid
 }
 
 qvarid {
@@ -182,22 +194,20 @@ exponent {
 }
 
 char {
-    "\'" (graphic | space | escape) "\'" "TODO"
+    "\'" (graphic | space | escape) "\'" 
 }
 
 string {
-    "\"" (graphic | space | escape) "\"" "TODO"
+    "\"" (graphic | space | escape | gap) "\"" 
 }
 
 escape {
-    "\" (charesc | ascii | decimal | "o" octal | "x" hexadecimal)
+    "\\" (charesc | ascii | decimal | "o" octal | "x" hexadecimal)
 }
 
 gap {
-    "\" whitechar (whitechar)* "\"
+    "\\" whitechar (whitechar)* "\\"
 }
-
-
 
 exp {
     infixexp "::" (context "=>")? type |
@@ -212,7 +222,7 @@ infixexp {
 }
 
 lexp {
-    "\" (apat)+ "->" exp |
+    "\\" (apat)+ "->" exp |
     "let" decls "in" exp |
     "if" exp (";")? "then" exp (";")? "else" exp |
     "case" exp "of" "{" alts "}" |
@@ -289,7 +299,7 @@ qual {
 }
 
 alts {
-    alt [";" alt]*
+    alt (";" alt)*
 }
 
 alt {
@@ -303,7 +313,7 @@ gdpat {
 }
 
 guards {
-    "|" guard ["," guard]*
+    "|" guard ("," guard)*
 }
 
 guard {
@@ -341,7 +351,7 @@ lpat {
 }
 
 apat {
-    var "[@" apat "]" |
+    var ("@" apat )? |
     gcon |
     qcon "{}" |
     qcon "{" fpat ("," fpat)* "}"
@@ -357,15 +367,25 @@ fpat {
     qvar "=" pat
 }
 
-module {
-    "module" modid (exports)? "where" body |
-    body
-}
 
 body {
     "{" impdecls ";" topdecls "}" |
     "{" impdecls "}" |
     "{" topdecls "}"
+}
+
+exports {
+    "(" (",")? ")" |
+    "(" export ("," export)* (",")? ")"   
+}
+
+export {
+    qvar |
+    qtycon "[" ("(" ".." ")" | "(" ")") "]" |
+    qtycon "[" ("(" ".." ")" | "(" cname ("," cname)* ")" ) "]" |
+    qtycls "[" ("(" ".." ")" | "(" ")") "]" |
+    qtycls "[" ("(" ".." ")" | "(" var ("," var)* ")" ) "]" |
+    "module" modid
 }
 
 topdecls {
@@ -374,8 +394,8 @@ topdecls {
 
 topdecl {
     "type" simpletype "=" type |
-    "data" (context "=>")? simpletype ("=" constrs)? ("deriving")? |
-    "newtype" (context "=>")? simpletype "=" newconstr ("deriving")? |
+    "data" (context "=>")? simpletype ("=" constrs)? (deriving)? |
+    "newtype" (context "=>")? simpletype "=" newconstr (deriving)? |
     "class" (scontext "=>")? tycls tyvar ("where" cdecls)? |
     "instance" (scontext "=>")? qtycls inst ("where" idecls)? |
     "default" "(" ")" |
@@ -428,12 +448,6 @@ vars {
     var ("," var)*
 }
 
-fixity {
-    infixl | 
-    infixr |
-    infix
-}
-
 type {
     btype ("->" type)?
 }
@@ -449,6 +463,16 @@ btype {
     "[" type "]" |
     "(" type ")" 
  } 
+
+ gtycon { 
+    gtycontok |
+    qtycon
+    }
+
+gcon { 
+    qcon |
+    gcontok
+    }
 
  context {
      class |
@@ -579,9 +603,6 @@ letter {
     "_"
 }
 
-topdecl {
-    "foreign" fdecl
-}
 
 fdecl {
     "import" callconv (safety)? impent var "::" ftype |
@@ -589,7 +610,9 @@ fdecl {
 }
 
 impent {
-    (string)?
+    (string)? |
+    "\"" ("static")? (chname)? ("&")? (cid)? "\""
+
 }
 
 expent {
@@ -610,15 +633,6 @@ fatype {
     qtycon (atype)*
 }
 
-impent {
-    "\"" ("static")? ("chname")? ("&")? (cid)? "\"" |
-    "\"" dynamic "\"" |
-    "\"" wrapper "\"" 
-} 
-
-expent {
-    "\"" (cid)? "\""
-}
 
 @tokens {
     special {"(" | ")" | "," | ";" | "[" | "]" | "`" | "{" | "}"}
@@ -629,32 +643,39 @@ expent {
     space {" "}
     tab {"  "}
     uniWhite {std.whitespace}
-    dashes {"--"("-")*}
-    opecom {"{-"}
+    dashes {"--" ("-")*}
+    opencom {"{-"}
     closecom {"-}"}
-    quot {"\"" | "\'"        "?????????????????"} 
+    quot {"\"" | "\'" } 
     ascSmall {std.asciiLowercase}
     uniSmall {"TODO"}
     underline {"_"}
     ascLarge {std.asciiUppercase}
-    uniLarge {"TODO"}
     ascSymbol {"!" | "#" | "$" | "%" | "&" | "⋆" | "+" | "." | "/" |
-                "<" | "=" | ">" | "?" | "@" | "\" | "^" | "|" | "-" |
+                "<" | "=" | ">" | "?" | "@" | "\\" | "^" | "|" | "-" |
                 "~" | ":"}
     uniSymbol{"TODO"}
+    digit {ascDigit | uniDigit}
     ascDigit {std.digit}
     uniDigit {"TODO"}  
-    octit {[0..7]}  
-    hexit {digit | [A..F] | [a..f]}
-    charesc {"a" | "b" | "f" | "n" | "r" | "t" | "v" | "\" | "\"" | "\'" | "&"}
-    ascii {"^cntrl" | "NUL" | "SOH" | "STX" | "ETX" | "EOT" | "ENQ" | 
+    octit {$[0-7]}  
+    hexit {digit | $[A-F] | $[a-f]}
+    charesc {"a" | "b" | "f" | "n" | "r" | "t" | "v" | "\\" | "\"" | "\'" | "&"}
+    ascii {"^" cntrl | "NUL" | "SOH" | "STX" | "ETX" | "EOT" | "ENQ" | 
     "ACK" |	"BEL" | "BS" | "HT" | "LF" | "VT" | "FF" | "CR" | "SO" |
     "SI" | "DLE" | "DC1" | "DC2" | "DC3" | "DC4" | "NAK" | "SYN" | "ETB" | 
     "CAN"| "EM" | "SUB" | "ESC" | "FS" | "GS" | "RS" | "US" | "SP" | "DEL"}
-    cntrl {ascLarge | "@" | "[" | "]" | "\" | "^" | "_"}
-    gcon { "()" | "[]" | "(," (",")* ")" | qcon}
-    gtycon { "()" | "[]" | "(->)" | "(," (",")* ")" | qtycon}
+    cntrl {ascLarge | "@" | "[" | "]" | "\\" | "^" | "_"}
+    gcontok {"()" | "[]" | "(," (",")* ")" }
+    gtycontok {"()" | "[]" | "(->)" | "(," (",")* ")" }
     callconv { "ccall" | "stdcall" | "cplusplus" | "jvm" | "dotnet"}
     safety { "safe" | "unsafe"}
+    fixity {"infixl" | "infixr" | "infix"}
+    reservedid {"case" | "class" | "data" | "default" | "deriving" | "do" | "else" |
+    "foreign" | "if" | "import" | "in" | "infix" | "infixl" |	
+    "infixr" | "instance" | "let" | "module" | "newtype" | "of" |
+    "then" | "type" | "where" | "_"}
+    reservedop {".." | ":" | "::" | "=" | "\\" | "|" | "<-" | "->" |
+    "@" | "~" | "=>"}
     }
 

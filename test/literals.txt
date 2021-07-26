@@ -1,0 +1,8 @@
+# Simple 
+
+x = 5 
+
+==> 
+
+Module(body(topdecls(topdecl(decl(pat(lpat(apat(var))),
+                                  rhs(exp(infixexp(lexp(fexp(aexp(literal(integer(decimal)))))))))))))
