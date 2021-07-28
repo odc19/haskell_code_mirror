@@ -1,14 +1,26 @@
 @precedence {
-    modid, conid, ascLarge
-}
-@top Program {
-    (lexeme | whitespace)*
+    modid, conid, ascLarge,
+     varid, small,
+      varsym, symbol,
+       float, integer,
+        nl @cut,
+    record
 }
 
-
-module {
-    "module" modid (exports)? "where" body |
+@top Module{
+    "module" ModuleName (Exports)? "where" body |
     body
+}
+ModuleName {
+    modid
+}
+
+program {
+    (lexeme)*
+}
+
+@skip {
+    whitechar | comment | ncomment
 }
 
 
@@ -25,22 +37,10 @@ lexeme {
 }
 
 literal {
-    integer |
-    float |
+    !integer integer |
+    !float float |
     char|
     string
-}
-
-
-
-whitespace {
-    whitestuff whitestuff*
-}
-
-whitestuff {
-    whitechar |
-    comment |
-    ncomment
 }
 
 whitechar {
@@ -52,7 +52,7 @@ whitechar {
 }
 
 newline {
-    return linefeed |
+    !nl return linefeed |
     return |
     linefeed |
     formfeed
@@ -95,7 +95,7 @@ graphic {
 
 
 small {
-    ascSmall |
+    !small ascSmall |
     uniSmall |
     underline
 }
@@ -107,13 +107,12 @@ large {
 }
 
 symbol {
-    ascSymbol |
-    uniSymbol
+    !symbol ascSymbol 
 }
 
 
 varid {
-    small (small | large | digit | "\'")* 
+    !varid small (small | large | digit | "\'")* 
 }
 
 conid {
@@ -121,7 +120,7 @@ conid {
 }
 
 varsym {
-    symbol (symbol)*
+    !varsym symbol (symbol)*
 }
 
 consym {
@@ -170,7 +169,7 @@ qconsym {
 
 
 decimal {
-    digit (digit)*
+    (digit)+
 }
 
 octal {
@@ -182,11 +181,11 @@ hexadecimal {
 }
 
 integer {
-    decimal | "0o" octal | "0O" octal | "0x" hexadecimal | "0X" hexadecimal 
+    !integer decimal | "0o" octal | "0O" octal | "0x" hexadecimal | "0X" hexadecimal 
 }
 
 float {
-    decimal "." decimal (exponent)?
+    !float decimal "." decimal (exponent)?
 }
 
 exponent {
@@ -353,8 +352,8 @@ lpat {
 apat {
     var ("@" apat )? |
     gcon |
-    qcon "{}" |
-    qcon "{" fpat ("," fpat)* "}"
+    qcon !record "{}" |
+    qcon !record "{" fpat ("," fpat)* "}"
     literal |
     "_" |
     "(" pat ")" |
@@ -369,12 +368,11 @@ fpat {
 
 
 body {
-    "{" impdecls ";" topdecls "}" |
-    "{" impdecls "}" |
+    "{" impdecls (~ambig ";" topdecls)? "}" |
     "{" topdecls "}"
 }
 
-exports {
+Exports {
     "(" (",")? ")" |
     "(" export ("," export)* (",")? ")"   
 }
@@ -558,11 +556,11 @@ gdrhs {
 }
 
 impdecls {
-    impdecl (";" impdecl)*
+    impdecl (~ambig ";" impdecl)*
 }
 
 impdecl {
-    "import" ("qualified")? modid ("as" modid)? (impspec)? |
+    "import" ("qualified")? modid ("as" modid)? (impspec)? 
 }
 
 impspec {
@@ -654,7 +652,6 @@ fatype {
     ascSymbol {"!" | "#" | "$" | "%" | "&" | "⋆" | "+" | "." | "/" |
                 "<" | "=" | ">" | "?" | "@" | "\\" | "^" | "|" | "-" |
                 "~" | ":"}
-    uniSymbol{"TODO"}
     digit {ascDigit | uniDigit}
     ascDigit {std.digit}
     uniDigit {"TODO"}  
