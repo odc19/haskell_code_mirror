@@ -12,15 +12,15 @@
 }
 
 @top Module{
-    "module" ModuleName (Exports)? "where" body |
-    body
+    "module" ModuleName (Exports)? "where" Body |
+    Body
 }
 ModuleName {
     modid
 }
 
-program {
-    (lexeme)*
+Program {
+    (Lexeme)*
 }
 
 @skip {
@@ -28,7 +28,7 @@ program {
 }
 
 
-lexeme {
+Lexeme {
     qvarid |
     qconid | 
     qvarsym | 
@@ -69,16 +69,11 @@ comment {
 }
 
 ncomment {
-    opencom ANYseq (ncomment ANYseq)* closecom
+    opencom anyseq (ncomment anyseq)* closecom
 }
 
-ANYseq {
-    (ANY)*
-}
-
-ANY {
-    graphic |
-    whitechar
+anyseq {
+    (graphic | whitechar)*
 }
 
 any {
@@ -95,7 +90,6 @@ graphic {
     special |
     quot
 }
-
 
 
 small {
@@ -124,7 +118,7 @@ conid {
 }
 
 varsym {
-    !varsym symbol (symbol)*
+    !varsym (symbol)+
 }
 
 consym {
@@ -207,43 +201,43 @@ gap {
     "\\" whitechar (whitechar)* "\\"
 }
 
-exp {
-    infixexp "::" (context "=>")? type |
-    infixexp !typeA
+Exp {
+    Infixexp "::" (context "=>")? Type |
+    Infixexp !typeA
 }
 
-infixexp {
-    lexp qop infixexp |
-    "-" infixexp |
-    lexp|
-    exp qop exp
+Infixexp {
+    Lexp qop Infixexp |
+    "-" Infixexp |
+    Lexp|
+    Exp qop Exp
 }
 
-lexp {
-    "\\" (apat)+ "->" exp |
-    "let" decls "in" exp |
-    "if" exp (";")? "then" exp (";")? "else" exp |
-    "case" exp "of" "{" alts "}" |
-    "do {" stmts "}" |
-    fexp
+Lexp {
+    "\\" (Apat)+ "->" Exp |
+    "let" Decls "in" Exp |
+    "if" Exp (";")? "then" Exp (";")? "else" Exp |
+    "case" Exp "of" "{" Alts "}" |
+    "do {" Stmts "}" |
+    Fexp
 }
 
-fexp {
-    (fexp)? aexp
+Fexp {
+    (Fexp)? Aexp
 }
 
-aexp {
+Aexp {
     qvar |
     gcon |
     literal |
-    "(" exp ")" |
-    "(" exp ("," exp)+ ")" |
-    "[" exp ("," exp)? ".." (exp)? "]" |
-    "[" exp "|" qual ("," qual)+ "]" |
-    "(" infixexp qop")" |
+    "(" Exp ")" |
+    "(" Exp ("," Exp)+ ")" |
+    "[" Exp ("," Exp)? ".." (Exp)? "]" |
+    "[" Exp "|" qual ("," qual)+ "]" |
+    "(" Infixexp qop")" |
     qcon "{}" |
     qcon "{" fbind ("," fbind)* "}" |
-    aexp "{" fbind ("," fbind)* "}"
+    Aexp "{" fbind ("," fbind)* "}"
 }
 
 var {
@@ -291,23 +285,23 @@ gconsym {
 }
 
 qual {
-    pat "<-" exp |
-    "let" decls |
-    exp
+    Pat "<-" Exp |
+    "let" Decls |
+    Exp
 }
 
-alts {
-    alt (";" alt)*
+Alts {
+    Alt (";" Alt)*
 }
 
-alt {
-    pat "->" exp "[where" decls "]" |
-    pat gdpat "[where" decls "]" |
+Alt {
+    Pat "->" Exp "[where" Decls "]" |
+    Pat Gdpat "[where" Decls "]" |
     ""
 }
 
-gdpat {
-    guards "->" exp "[" gdpat "]"
+Gdpat {
+    guards "->" Exp "[" Gdpat "]"
 }
 
 guards {
@@ -315,68 +309,68 @@ guards {
 }
 
 guard {
-    ~ambig pat "<-" infixexp |
-    "let" decls |
-    ~ambig infixexp
+    ~ambig Pat "<-" Infixexp |
+    "let" Decls |
+    ~ambig Infixexp
 }
 
-stmts {
-    (stmt)* exp (";")? 
+Stmts {
+    (Stmt)* Exp (";")? 
 }
 
-stmt {
-    exp ";" |
-    pat "<-" exp ";" |
-    "let" decls ";" |
+Stmt {
+    Exp ";" |
+    Pat "<-" Exp ";" |
+    "let" Decls ";" |
     ";"
 }
 
 fbind {
-    qvar "=" exp
+    qvar "=" Exp
 }
 
-pat {
-    lpat qconop pat |
-    lpat
+Pat {
+    Lpat qconop Pat |
+    Lpat
 }
 
-lpat {
-    apat |
+Lpat {
+    Apat |
     "-" (integer | float) |
     gcon "{}" |
-    gcon "{" apat ("," apat)* "}" 
+    gcon "{" Apat ("," Apat)* "}" 
 
 }
 
-apat {
-    var ("@" apat )? |
+Apat {
+    var ("@" Apat )? |
     gcon |
     qcon !record "{}" |
-    qcon !record "{" fpat ("," fpat)* "}"
+    qcon !record "{" Fpat ("," Fpat)* "}"
     literal |
     "_" |
-    "(" pat ")" |
-    "(" pat ("," pat)+ ")" |
-    "[" pat ("," pat)* "]" |
-    "~" apat  
+    "(" Pat ")" |
+    "(" Pat ("," Pat)+ ")" |
+    "[" Pat ("," Pat)* "]" |
+    "~" Apat  
 }
 
-fpat {
-    qvar "=" pat
+Fpat {
+    qvar "=" Pat
 }
 
 
-body {
-    "{" impdecls (~ambig ";" topdecls)? "}" |
-    "{" topdecls "}"
+Body {
+    "{" Impdecls (~ambig ";" Topdecls)? "}" |
+    "{" Topdecls "}"
 }
 
 Exports {
     "(" (",")? ")" |
-    "(" export ("," export)* (",")? ")"   
+    "(" Export ("," Export)* (",")? ")"   
 }
 
-export {
+Export {
     qvar |
     qtycon ("(" ".." ")" | "(" ")")? |
     qtycon ("(" ".." ")" | "(" cname ("," cname)* ")" )? |
@@ -385,51 +379,51 @@ export {
     "module" modid
 }
 
-topdecls {
-    topdecl (";" topdecl)*
+Topdecls {
+    Topdecl (";" Topdecl)*
 }
 
-topdecl {
-    "type" simpletype "=" type |
-    "data" (context "=>")? simpletype ("=" constrs)? (deriving)? |
-    "newtype" (context "=>")? simpletype "=" newconstr (deriving)? |
-    "class" (scontext "=>")? tycls tyvar ("where" cdecls)? |
-    "instance" (scontext "=>")? qtycls inst ("where" idecls)? |
+Topdecl {
+    "type" Simpletype "=" Type |
+    "data" (context "=>")? Simpletype ("=" constrs)? (deriving)? |
+    "newtype" (context "=>")? Simpletype "=" newconstr (deriving)? |
+    "class" (scontext "=>")? tycls tyvar ("where" Cdecls)? |
+    "instance" (scontext "=>")? qtycls inst ("where" Idecls)? |
     "default" "(" ")" |
-    "default" "(" type ("," type)* ")" |
-    "foreign" fdecl |
-    decl
+    "default" "(" Type ("," Type)* ")" |
+    "foreign" Fdecl |
+    Decl
 }
 
-decls {
-    "{" decl (";" decl)* "}"
+Decls {
+    "{" Decl (";" Decl)* "}"
 }
 
-decl {
-    gendecl |
-    (funlhs | pat) rhs
+Decl {
+    Gendecl |
+    (funlhs | Pat) rhs
 }
 
-cdecls {
-    "{" cdecl (";" cdecl)* "}"
+Cdecls {
+    "{" Cdecl (";" Cdecl)* "}"
 }
 
-cdecl {
-    gendecl |
+Cdecl {
+    Gendecl |
     (funlhs | var) rhs
 }
 
-idecls {
-    "{" idecl (";" idecl)* "}"
+Idecls {
+    "{" Idecl (";" Idecl)* "}"
 }
 
-idecl {
+Idecl {
     (funlhs | var) rhs |
     ""
 }
 
-gendecl {
-    vars "::" (context "=>")? type |
+Gendecl {
+    vars "::" (context "=>")? Type |
     fixity (integer)? ops |
     ""
 }
@@ -442,20 +436,20 @@ vars {
     var ("," var)*
 }
 
-type {
-    btype ("->" type)?
+Type {
+    Btype ("->" Type)?
 }
 
-btype {
-    (btype)? atype
+Btype {
+    (Btype)? Atype
 }
 
- atype {
+ Atype {
     gtycon |
     tyvar |
-    "(" type ("," type)+ ")" | 
-    "[" type "]" |
-    "(" type ")" 
+    "(" Type ("," Type)+ ")" | 
+    "[" Type "]" |
+    "(" Type ")" 
  } 
 
  gtycon { 
@@ -476,10 +470,10 @@ gcon {
 
  class {
      qtycls tyvar |
-     qtycls "(" tyvar atype (atype)* ")"
+     qtycls "(" tyvar Atype (Atype)* ")"
  }
 
-simpletype {
+Simpletype {
     tycon |
     tycon tyvar (tyvar)*
 }
@@ -489,14 +483,14 @@ constrs {
 }
 
 constr {
-    con (("!")? atype)* |
-    (btype | "!" atype) conop (btype | "!" atype) |
+    con (("!")? Atype)* |
+    (Btype | "!" Atype) conop (Btype | "!" Atype) |
     con "{" "}" |
-    con "{" fielddecl ("," fielddecl)* "}"
+    con "{" Fielddecl ("," Fielddecl)* "}"
 }
 
-fielddecl {
-    vars "::" (type | "!" atype)
+Fielddecl {
+    vars "::" (Type | "!" Atype)
 }
 
 deriving {
@@ -513,8 +507,8 @@ dclass {
 }
 
 newconstr {
-    con atype |
-    con "{" var "::" type "}"
+    con Atype |
+    con "{" var "::" Type "}"
 }
 
 scontext {
@@ -537,25 +531,25 @@ inst {
 }
 
 funlhs {
-    var apat "{" apat "}" |
-    pat varop pat |
-    "(" funlhs ")" apat "{" apat "}"
+    var Apat "{" Apat "}" |
+    Pat varop Pat |
+    "(" funlhs ")" Apat "{" Apat "}"
 }
 
 rhs {
-    "=" exp ( "where" decls)? |
-    gdrhs ( "where" decls )?
+    "=" Exp ( "where" Decls)? |
+    gdrhs ( "where" Decls )?
 }
 
 gdrhs {
-    guards "=" exp ( gdrhs )?
+    guards "=" Exp ( gdrhs )?
 }
 
-impdecls {
-    impdecl (~ambig ";" impdecl)*
+Impdecls {
+    Impdecl (~ambig ";" Impdecl)*
 }
 
-impdecl {
+Impdecl {
     "import" ("qualified")? modid ("as" modid)? (impspec)? 
 }
 
@@ -598,9 +592,9 @@ letter {
 }
 
 
-fdecl {
-    "import" callconv (safety)? impent var "::" ftype |
-    "export" callconv expent var "::" ftype
+Fdecl {
+    "import" callconv (safety)? impent var "::" Ftype |
+    "export" callconv expent var "::" Ftype
 }
 
 impent {
@@ -612,18 +606,14 @@ expent {
     (string)?
 }
 
-ftype {
-    frtype |
-    fatype "->" ftype
+Ftype {
+    Frtype |
+    qtycon (Atype)* "->" Ftype
 }
 
-frtype {
-    fatype |
+Frtype {
+    qtycon (Atype)* |
     "()"
-}
-
-fatype {
-    qtycon (atype)*
 }
 
 
