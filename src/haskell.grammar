@@ -1,10 +1,14 @@
 @precedence {
-    modid, conid, ascLarge,
-     varid, small,
-      varsym, symbol,
-       float, integer,
-        nl @cut,
-    record
+    modid, 
+    conid, ascLarge,
+    varid, small,
+    varsym, symbol,
+    float, integer,
+    nl @cut,
+    record, 
+    decl,
+    patternGuard,
+    typeA
 }
 
 @top Module{
@@ -124,7 +128,7 @@ varsym {
 }
 
 consym {
-    ":" (symbol)*
+    ":" (symbol)+
 }
 
 tyvar {
@@ -167,11 +171,6 @@ qconsym {
     (modid ".")? consym
 }
 
-
-decimal {
-    (digit)+
-}
-
 octal {
     octit (octit)*
 }
@@ -210,7 +209,7 @@ gap {
 
 exp {
     infixexp "::" (context "=>")? type |
-    infixexp
+    infixexp !typeA
 }
 
 infixexp {
@@ -276,7 +275,7 @@ conop {
 }
 
 qconop {
-    gconsym | "`" qconid "`"
+    gconsym | !decl "`" qconid "`"
 }
 
 op {
@@ -316,9 +315,9 @@ guards {
 }
 
 guard {
-    pat "<-" infixexp |
+    ~ambig pat "<-" infixexp |
     "let" decls |
-    infixexp
+    ~ambig infixexp
 }
 
 stmts {
@@ -379,10 +378,10 @@ Exports {
 
 export {
     qvar |
-    qtycon "[" ("(" ".." ")" | "(" ")") "]" |
-    qtycon "[" ("(" ".." ")" | "(" cname ("," cname)* ")" ) "]" |
-    qtycls "[" ("(" ".." ")" | "(" ")") "]" |
-    qtycls "[" ("(" ".." ")" | "(" var ("," var)* ")" ) "]" |
+    qtycon ("(" ".." ")" | "(" ")")? |
+    qtycon ("(" ".." ")" | "(" cname ("," cname)* ")" )? |
+    qtycls ("(" ".." ")" | "(" ")")? |
+    qtycls ("(" ".." ")" | "(" var ("," var)* ")" )? |
     "module" modid
 }
 
@@ -403,7 +402,6 @@ topdecl {
 }
 
 decls {
-    "{" (decl)? "}" |
     "{" decl (";" decl)* "}"
 }
 
@@ -413,7 +411,6 @@ decl {
 }
 
 cdecls {
-    "{"  "}" |
     "{" cdecl (";" cdecl)* "}"
 }
 
@@ -423,7 +420,6 @@ cdecl {
 }
 
 idecls {
-    "{" "}" |
     "{" idecl (";" idecl)* "}"
 }
 
@@ -547,12 +543,12 @@ funlhs {
 }
 
 rhs {
-    "=" exp ("[" "where" decls "]")? |
-    gdrhs ("[" "where" decls "]")?
+    "=" exp ( "where" decls)? |
+    gdrhs ( "where" decls )?
 }
 
 gdrhs {
-    guards "=" exp ("[" gdrhs "]")?
+    guards "=" exp ( gdrhs )?
 }
 
 impdecls {
@@ -608,8 +604,7 @@ fdecl {
 }
 
 impent {
-    (string)? |
-    "\"" ("static")? (chname)? ("&")? (cid)? "\""
+    (string)? 
 
 }
 
@@ -674,5 +669,6 @@ fatype {
     "then" | "type" | "where" | "_"}
     reservedop {".." | ":" | "::" | "=" | "\\" | "|" | "<-" | "->" |
     "@" | "~" | "=>"}
+    decimal {(digit)+}
     }
 
