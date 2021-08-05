@@ -1,3 +1,5 @@
+//TODO: Unicode support
+
 @precedence {
     modid, 
     conid, ascLarge,
@@ -12,32 +14,16 @@
 }
 
 @top Module{
-    "module" ModuleName (Exports)? "where" Body |
+    @specialize<varid, "module"> ModuleName (Exports)? @specialize<varid, "where"> Body |
     Body
 }
+
 ModuleName {
     modid
 }
 
-Program {
-    (Lexeme)*
-}
-
 @skip {
     whitechar | comment | ncomment
-}
-
-
-Lexeme {
-    qvarid |
-    qconid | 
-    qvarsym | 
-    qconsym |
-    literal | 
-    special | 
-    reservedop | 
-    reservedid | 
-    module
 }
 
 literal {
@@ -46,6 +32,7 @@ literal {
     char|
     string
 }
+
 
 whitechar {
     newline |
@@ -91,38 +78,8 @@ graphic {
     quot
 }
 
-
-small {
-    !small ascSmall |
-    uniSmall |
-    underline
-}
-
-
-
-large {
-    !ascLarge ascLarge 
-}
-
-symbol {
-    !symbol ascSymbol 
-}
-
-
-varid {
-    !varid small (small | large | digit | "\'")* 
-}
-
 conid {
     !conid large (small | large | digit | "\'")*
-}
-
-varsym {
-    !varsym (symbol)+
-}
-
-consym {
-    ":" (symbol)+
 }
 
 tyvar {
@@ -215,10 +172,10 @@ Infixexp {
 
 Lexp {
     "\\" (Apat)+ "->" Exp |
-    "let" Decls "in" Exp |
-    "if" Exp (";")? "then" Exp (";")? "else" Exp |
-    "case" Exp "of" "{" Alts "}" |
-    "do {" Stmts "}" |
+    @specialize<varid, "let"> Decls @specialize<varid, "in"> Exp |
+    @specialize<varid, "if"> Exp (";")? @specialize<varid, "then"> Exp (";")? @specialize<varid, "else"> Exp |
+    @specialize<varid, "case"> Exp @specialize<varid, "of"> "{" Alts "}" |
+    @specialize<varid, "do"> "{" Stmts "}" |
     Fexp
 }
 
@@ -286,7 +243,7 @@ gconsym {
 
 qual {
     Pat "<-" Exp |
-    "let" Decls |
+    @specialize<varid, "let"> Decls |
     Exp
 }
 
@@ -310,7 +267,7 @@ guards {
 
 guard {
     ~ambig Pat "<-" Infixexp |
-    "let" Decls |
+    @specialize<varid, "let"> Decls |
     ~ambig Infixexp
 }
 
@@ -321,7 +278,7 @@ Stmts {
 Stmt {
     Exp ";" |
     Pat "<-" Exp ";" |
-    "let" Decls ";" |
+    @specialize<varid, "let"> Decls ";" |
     ";"
 }
 
@@ -348,7 +305,7 @@ Apat {
     qcon !record "{}" |
     qcon !record "{" Fpat ("," Fpat)* "}"
     literal |
-    "_" |
+    @specialize<varid, "_"> |
     "(" Pat ")" |
     "(" Pat ("," Pat)+ ")" |
     "[" Pat ("," Pat)* "]" |
@@ -376,7 +333,7 @@ Export {
     qtycon ("(" ".." ")" | "(" cname ("," cname)* ")" )? |
     qtycls ("(" ".." ")" | "(" ")")? |
     qtycls ("(" ".." ")" | "(" var ("," var)* ")" )? |
-    "module" modid
+    @specialize<varid, "module"> modid
 }
 
 Topdecls {
@@ -384,14 +341,14 @@ Topdecls {
 }
 
 Topdecl {
-    "type" Simpletype "=" Type |
-    "data" (context "=>")? Simpletype ("=" constrs)? (deriving)? |
-    "newtype" (context "=>")? Simpletype "=" newconstr (deriving)? |
-    "class" (scontext "=>")? tycls tyvar ("where" Cdecls)? |
-    "instance" (scontext "=>")? qtycls inst ("where" Idecls)? |
-    "default" "(" ")" |
-    "default" "(" Type ("," Type)* ")" |
-    "foreign" Fdecl |
+    @specialize<varid, "type"> Simpletype "=" Type |
+    @specialize<varid, "data">  (context "=>")? Simpletype ("=" constrs)? (deriving)? |
+    @specialize<varid, "newtype"> (context "=>")? Simpletype "=" newconstr (deriving)? |
+    @specialize<varid, "class"> (scontext "=>")? tycls tyvar (@specialize<varid, "where"> Cdecls)? |
+    @specialize<varid, "instance"> (scontext "=>")? qtycls inst (@specialize<varid, "where"> Idecls)? |
+    @specialize<varid, "default">  "(" ")" |
+    @specialize<varid, "default"> "(" Type ("," Type)* ")" |
+    @specialize<varid, "foreign"> Fdecl |
     Decl
 }
 
@@ -494,7 +451,7 @@ Fielddecl {
 }
 
 deriving {
-    "deriving" (dclass | dclasses)
+    @specialize<varid, "deriving"> (dclass | dclasses)
 }
 
 dclasses {
@@ -537,8 +494,8 @@ funlhs {
 }
 
 rhs {
-    "=" Exp ( "where" Decls)? |
-    gdrhs ( "where" Decls )?
+    "=" Exp ( @specialize<varid, "where"> Decls)? |
+    gdrhs ( @specialize<varid, "where"> Decls )?
 }
 
 gdrhs {
@@ -550,14 +507,14 @@ Impdecls {
 }
 
 Impdecl {
-    "import" ("qualified")? modid ("as" modid)? (impspec)? 
+    @specialize<varid, "import">  (@extend<varid, "qualified">)? modid (@extend<varid, "as"> modid)? (impspec)? 
 }
 
 impspec {
     "(" ")" |
     "(" import ("," import)* (",")? ")" |
-    "hiding" "(" ")" |
-    "hiding" "(" import ("," import)* (",")? ")"
+    @extend<varid, "hiding"> "(" ")" |
+    @extend<varid, "hiding"> "(" import ("," import)* (",")? ")"
 }
 
 import {
@@ -573,27 +530,8 @@ cname {
     con
 }
 
-chname {
-    (chchar)* ".h" 
-}
-
-cid {
-    letter (letter | ascDigit)*
-}
-
-chchar {
-    letter | ascSymbol
-}
-
-letter {
-    ascSmall |
-    ascLarge |
-    "_"
-}
-
-
 Fdecl {
-    "import" callconv (safety)? impent var "::" Ftype |
+    @specialize<varid, "import"> callconv (safety)? impent var "::" Ftype |
     "export" callconv expent var "::" Ftype
 }
 
@@ -616,30 +554,34 @@ Frtype {
     "()"
 }
 
+fixity {@specialize<varid,"infixl"> | @specialize<varid, "infixr"> | @specialize<varid, "infix">}
+
+safety { @extend<varid, "safe"> | @extend<varid, "unsafe">}
+
+callconv { @extend<varid, "ccall"> | @extend<varid,"stdcall"> | @extend<varid, "cplusplus"> | @extend<varid, "jvm"> | @extend<varid, "dotnet">}
+
 
 @tokens {
     special {"(" | ")" | "," | ";" | "[" | "]" | "`" | "{" | "}"}
     return {"\r"}
     linefeed {"\n"}
     formfeed {"\f"}
-    vertab {"|"}
+    vertab {"\v"}
     space {" "}
-    tab {"  "}
+    tab {"\t"}
     uniWhite {std.whitespace}
     dashes {"--" ("-")*}
     opencom {"{-"}
     closecom {"-}"}
     quot {"\"" | "\'" } 
     ascSmall {std.asciiLowercase}
-    uniSmall {"TODO"}
     underline {"_"}
     ascLarge {std.asciiUppercase}
     ascSymbol {"!" | "#" | "$" | "%" | "&" | "⋆" | "+" | "." | "/" |
                 "<" | "=" | ">" | "?" | "@" | "\\" | "^" | "|" | "-" |
                 "~" | ":"}
-    digit {ascDigit | uniDigit}
+    digit {ascDigit }
     ascDigit {std.digit}
-    uniDigit {"TODO"}  
     octit {$[0-7]}  
     hexit {digit | $[A-F] | $[a-f]}
     charesc {"a" | "b" | "f" | "n" | "r" | "t" | "v" | "\\" | "\"" | "\'" | "&"}
@@ -650,15 +592,12 @@ Frtype {
     cntrl {ascLarge | "@" | "[" | "]" | "\\" | "^" | "_"}
     gcontok {"()" | "[]" | "(," (",")* ")" }
     gtycontok {"()" | "[]" | "(->)" | "(," (",")* ")" }
-    callconv { "ccall" | "stdcall" | "cplusplus" | "jvm" | "dotnet"}
-    safety { "safe" | "unsafe"}
-    fixity {"infixl" | "infixr" | "infix"}
-    reservedid {"case" | "class" | "data" | "default" | "deriving" | "do" | "else" |
-    "foreign" | "if" | "import" | "in" | "infix" | "infixl" |	
-    "infixr" | "instance" | "let" | "module" | "newtype" | "of" |
-    "then" | "type" | "where" | "_"}
-    reservedop {".." | ":" | "::" | "=" | "\\" | "|" | "<-" | "->" |
-    "@" | "~" | "=>"}
     decimal {(digit)+}
+    varid { small (small | large | digit | "\'")* }
+    small { ascSmall | underline}
+    large { ascLarge }
+    varsym { (symbol)+}
+    consym { ":" (symbol)+}
+    symbol { ascSymbol }
     }
 
