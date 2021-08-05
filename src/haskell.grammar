@@ -159,7 +159,7 @@ gap {
 }
 
 Exp {
-    Infixexp "::" (context "=>")? Type |
+    Infixexp @specialize<varsym, "::"> (context @specialize<varsym, "=>">)? Type |
     Infixexp !typeA
 }
 
@@ -171,7 +171,7 @@ Infixexp {
 }
 
 Lexp {
-    "\\" (Apat)+ "->" Exp |
+    "\\" (Apat)+ @specialize<varsym, "->"> Exp |
     @specialize<varid, "let"> Decls @specialize<varid, "in"> Exp |
     @specialize<varid, "if"> Exp (";")? @specialize<varid, "then"> Exp (";")? @specialize<varid, "else"> Exp |
     @specialize<varid, "case"> Exp @specialize<varid, "of"> "{" Alts "}" |
@@ -189,8 +189,8 @@ Aexp {
     literal |
     "(" Exp ")" |
     "(" Exp ("," Exp)+ ")" |
-    "[" Exp ("," Exp)? ".." (Exp)? "]" |
-    "[" Exp "|" qual ("," qual)+ "]" |
+    "[" Exp ("," Exp)? @specialize<varsym, ".."> (Exp)? "]" |
+    "[" Exp @specialize<varsym, "|"> qual ("," qual)+ "]" |
     "(" Infixexp qop")" |
     qcon "{}" |
     qcon "{" fbind ("," fbind)* "}" |
@@ -238,11 +238,11 @@ qop {
 }
 
 gconsym {
-    ":" | qconsym 
+    @specialize<varsym, ":"> | qconsym 
 }
 
 qual {
-    Pat "<-" Exp |
+    Pat @specialize<varsym, "<-"> Exp |
     @specialize<varid, "let"> Decls |
     Exp
 }
@@ -252,21 +252,21 @@ Alts {
 }
 
 Alt {
-    Pat "->" Exp "[where" Decls "]" |
-    Pat Gdpat "[where" Decls "]" |
+    Pat @specialize<varsym, "->"> Exp "[" @specialize<varid,"where"> Decls "]" |
+    Pat Gdpat "[" @specialize<varid, "where"> Decls "]" |
     ""
 }
 
 Gdpat {
-    guards "->" Exp "[" Gdpat "]"
+    guards @specialize<varsym, "->"> Exp "[" Gdpat "]"
 }
 
 guards {
-    "|" guard ("," guard)*
+    @specialize<varsym, "|"> guard ("," guard)*
 }
 
 guard {
-    ~ambig Pat "<-" Infixexp |
+    ~ambig Pat @specialize<varsym, "<-"> Infixexp |
     @specialize<varid, "let"> Decls |
     ~ambig Infixexp
 }
@@ -277,13 +277,13 @@ Stmts {
 
 Stmt {
     Exp ";" |
-    Pat "<-" Exp ";" |
+    Pat @specialize<varsym, "<-"> Exp ";" |
     @specialize<varid, "let"> Decls ";" |
     ";"
 }
 
 fbind {
-    qvar "=" Exp
+    qvar @specialize<varsym, "="> Exp
 }
 
 Pat {
@@ -300,7 +300,7 @@ Lpat {
 }
 
 Apat {
-    var ("@" Apat )? |
+    var (@specialize<varsym, "@"> Apat )? |
     gcon |
     qcon !record "{}" |
     qcon !record "{" Fpat ("," Fpat)* "}"
@@ -309,11 +309,11 @@ Apat {
     "(" Pat ")" |
     "(" Pat ("," Pat)+ ")" |
     "[" Pat ("," Pat)* "]" |
-    "~" Apat  
+    @specialize<varsym, "~"> Apat  
 }
 
 Fpat {
-    qvar "=" Pat
+    qvar @specialize<varsym, "="> Pat
 }
 
 
@@ -329,10 +329,10 @@ Exports {
 
 Export {
     qvar |
-    qtycon ("(" ".." ")" | "(" ")")? |
-    qtycon ("(" ".." ")" | "(" cname ("," cname)* ")" )? |
-    qtycls ("(" ".." ")" | "(" ")")? |
-    qtycls ("(" ".." ")" | "(" var ("," var)* ")" )? |
+    qtycon ("(" @specialize<varsym, ".."> ")" | "(" ")")? |
+    qtycon ("(" @specialize<varsym, ".."> ")" | "(" cname ("," cname)* ")" )? |
+    qtycls ("(" @specialize<varsym, ".."> ")" | "(" ")")? |
+    qtycls ("(" @specialize<varsym, ".."> ")" | "(" var ("," var)* ")" )? |
     @specialize<varid, "module"> modid
 }
 
@@ -341,11 +341,11 @@ Topdecls {
 }
 
 Topdecl {
-    @specialize<varid, "type"> Simpletype "=" Type |
-    @specialize<varid, "data">  (context "=>")? Simpletype ("=" constrs)? (deriving)? |
-    @specialize<varid, "newtype"> (context "=>")? Simpletype "=" newconstr (deriving)? |
-    @specialize<varid, "class"> (scontext "=>")? tycls tyvar (@specialize<varid, "where"> Cdecls)? |
-    @specialize<varid, "instance"> (scontext "=>")? qtycls inst (@specialize<varid, "where"> Idecls)? |
+    @specialize<varid, "type"> Simpletype @specialize<varsym, "="> Type |
+    @specialize<varid, "data">  (context @specialize<varsym, "=>">)? Simpletype (@specialize<varsym, "="> constrs)? (deriving)? |
+    @specialize<varid, "newtype"> (context @specialize<varsym, "=>">)? Simpletype @specialize<varsym, "="> newconstr (deriving)? |
+    @specialize<varid, "class"> (scontext @specialize<varsym, "=>">)? tycls tyvar (@specialize<varid, "where"> Cdecls)? |
+    @specialize<varid, "instance"> (scontext @specialize<varsym, "=>">)? qtycls inst (@specialize<varid, "where"> Idecls)? |
     @specialize<varid, "default">  "(" ")" |
     @specialize<varid, "default"> "(" Type ("," Type)* ")" |
     @specialize<varid, "foreign"> Fdecl |
@@ -380,7 +380,7 @@ Idecl {
 }
 
 Gendecl {
-    vars "::" (context "=>")? Type |
+    vars @specialize<varsym, "::"> (context @specialize<varsym, "=>">)? Type |
     fixity (integer)? ops |
     ""
 }
@@ -394,7 +394,7 @@ vars {
 }
 
 Type {
-    Btype ("->" Type)?
+    Btype (@specialize<varsym, "->"> Type)?
 }
 
 Btype {
@@ -436,7 +436,7 @@ Simpletype {
 }
 
 constrs {
-    constr ("|" constr)*
+    constr (@specialize<varsym, "|"> constr)*
 }
 
 constr {
@@ -447,7 +447,7 @@ constr {
 }
 
 Fielddecl {
-    vars "::" (Type | "!" Atype)
+    vars @specialize<varsym, "::"> (Type | "!" Atype)
 }
 
 deriving {
@@ -465,7 +465,7 @@ dclass {
 
 newconstr {
     con Atype |
-    con "{" var "::" Type "}"
+    con "{" var @specialize<varsym, "::"> Type "}"
 }
 
 scontext {
@@ -484,7 +484,7 @@ inst {
     "("gtycon (tyvar)* ")" |
     "(" tyvar ("," tyvar)+ ")" |
     "[" tyvar "]" |
-    "(" tyvar "->" tyvar ")"
+    "(" tyvar @specialize<varsym, "->"> tyvar ")"
 }
 
 funlhs {
@@ -494,12 +494,12 @@ funlhs {
 }
 
 rhs {
-    "=" Exp ( @specialize<varid, "where"> Decls)? |
+    @specialize<varsym, "="> Exp ( @specialize<varid, "where"> Decls)? |
     gdrhs ( @specialize<varid, "where"> Decls )?
 }
 
 gdrhs {
-    guards "=" Exp ( gdrhs )?
+    guards @specialize<varsym, "="> Exp ( gdrhs )?
 }
 
 Impdecls {
@@ -519,10 +519,10 @@ impspec {
 
 import {
     var |
-    tycon "[" "(..)" "|" "(" ")" "]" |
-    tycon "[" "(..)" "|" "(" cname ("," cname)* ")" "]" |
-    tycls "[" "(..)" "|" "(" ")" "]" |
-    tycls "[" "(..)" "|" "(" var ("," var)* ")" "]"
+    tycon "[" ("(..)" | "(" ")") "]" |
+    tycon "[" ("(..)" | "(" cname ("," cname)* ")") "]" |
+    tycls "[" ("(..)" | "(" ")") "]" |
+    tycls "[" ("(..)" | "(" var ("," var)* ")") "]"
 }
 
 cname {
@@ -531,8 +531,8 @@ cname {
 }
 
 Fdecl {
-    @specialize<varid, "import"> callconv (safety)? impent var "::" Ftype |
-    "export" callconv expent var "::" Ftype
+    @specialize<varid, "import"> callconv (safety)? impent var @specialize<varsym, "::"> Ftype |
+    "export" callconv expent var @specialize<varsym, "::"> Ftype
 }
 
 impent {
@@ -546,7 +546,7 @@ expent {
 
 Ftype {
     Frtype |
-    qtycon (Atype)* "->" Ftype
+    qtycon (Atype)* @specialize<varsym, "->"> Ftype
 }
 
 Frtype {
