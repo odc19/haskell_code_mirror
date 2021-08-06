@@ -1,0 +1,40 @@
+@precedence {
+    modid
+}
+
+@skip {
+    whitechar 
+}
+
+modid {
+    !modid (conid ".")* conid
+}
+
+qtycls {
+    (modid ".")? conid
+}
+
+@top Topdecls {
+    Topdecl (";" Topdecl)*
+}
+
+Topdecl {
+    @specialize<varid, "data">  (Constraint "=>")? Simpletype 
+}
+
+Constraint {
+    qtycls varid
+}
+
+Simpletype {
+    conid (varid)+
+}
+
+@tokens {
+    whitechar {std.whitespace}
+    small { std.asciiLowercase | "_"}
+    large { std.asciiUppercase }
+    varid { small (small | large | std.digit | "\'")* }
+    conid { large (small | large | std.digit | "\'")* }
+    }
+

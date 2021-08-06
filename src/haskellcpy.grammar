@@ -18,148 +18,36 @@
     Body
 }
 
-ModuleName {
-    modid
-}
+ModuleName { modid }
 
 //The characters and sets of characters to be ignored when matching the grammar.
 
-@skip {
-    whitechar | comment | ncomment
-}
+@skip { whitechar | comment | ncomment }
 
 // The most basic data types. (to be modified).
 
-literal {
-    !integer integer |
-    !float float |
-    char|
-    string
-}
-
-// The different types of white characters which may occur in a program. 
-
-whitechar {
-    newline |
-    vertab |
-    space |
-    tab |
-    uniWhite
-}
-
-// The syntax for terminating a line of code and starting a new one
-
-newline {
-    !nl return linefeed |
-    return |
-    linefeed |
-    formfeed
-}
-
-
-// The syntax for a comment line
-
-comment {
-    dashes (any (any)*)? newline
-}
+literal { !integer integer | !float float | char | string }
 
 // The syntax for a block of comment lines
 
-ncomment {
-    opencom anyseq (ncomment anyseq)* closecom
-}
+ncomment { opencom anyseq (ncomment anyseq)* closecom }
 
-anyseq {
-    (graphic | whitechar)*
-}
+modid { !modid (conid ".")* conid }
 
-tyvar {
-    varid
-}
+qvarid { (modid ".")? varid }
 
-tycon {
-    conid
-}
+qvarsym { (modid ".")? varsym }
 
-tycls {
-    conid
-}
-
-modid {
-    !modid (conid ".")* conid
-}
-
-qvarid {
-    (modid ".")? varid
-}
-
-qconid {
-    (modid ".")? conid
-}
-
-qtycon {
-    (modid ".")? tycon
-}
-
-qtycls {
-    (modid ".")? tycls
-}
-
-qvarsym {
-    (modid ".")? varsym
-}
-
-qconsym {
-    (modid ".")? consym
-}
-
-octal {
-    octit (octit)*
-}
-
-hexadecimal {
-    hexit (hexit)*
-}
-
-integer {
-    !integer decimal | "0o" octal | "0O" octal | "0x" hexadecimal | "0X" hexadecimal 
-}
-
-float {
-    !float decimal "." decimal (exponent)?
-}
-
-exponent {
-    ("e" | "E") ("+" | "-")? decimal
-}
-
-char {
-    "\'" (graphic | space | escape) "\'" 
-}
-
-string {
-    "\"" (graphic | space | escape | gap) "\"" 
-}
-
-escape {
-    "\\" (charesc | ascii | decimal | "o" octal | "x" hexadecimal)
-}
-
-gap {
-    "\\" whitechar (whitechar)* "\\"
-}
+qconsym { (modid ".")? consym }
 
 Exp {
     Infixexp @specialize<varsym, "::"> (context @specialize<varsym, "=>">)? Type |
     Infixexp !typeA
 }
 
-Infixexp {
-    Lexp qop Infixexp |
-    "-" Infixexp |
-    Lexp|
-    Exp qop Exp
-}
+string { "\"" (graphic | space | escape | gap) "\"" }
+
+Infixexp { Lexp qop Infixexp | "-" Infixexp | Lexp | Exp qop Exp }
 
 Lexp {
     "\\" (Apat)+ @specialize<varsym, "->"> Exp |
@@ -170,9 +58,7 @@ Lexp {
     Fexp
 }
 
-Fexp {
-    (Fexp)? Aexp
-}
+Fexp { (Fexp)? Aexp }
 
 Aexp {
     qvar |
@@ -188,49 +74,27 @@ Aexp {
     Aexp "{" fbind ("," fbind)* "}"
 }
 
-var {
-    varid | "(" varsym ")"
-}
+var { varid | "(" varsym ")" }
 
-qvar {
-    qvarid | "(" qvarsym ")"
-}
+qvar { qvarid | "(" qvarsym ")" }
 
-con {
-    conid | "(" consym ")"
-}
+con { conid | "(" consym ")" }
 
-qcon {
-    qconid | "(" gconsym ")"
-}
+qcon { modid | "(" gconsym ")" }
 
-varop {
-    varsym | "`" varid "`"
-}
+varop { varsym | "`" varid "`" }
 
-qvarop {
-    qvarsym | "`" qvarid "`"
-}
+qvarop { qvarsym | "`" qvarid "`" }
 
-conop {
-    consym | "`" conid "`"
-}
+conop { consym | "`" conid "`" }
 
-qconop {
-    gconsym | !decl "`" qconid "`"
-}
+qconop { gconsym | !decl "`" modid "`" }
 
-op {
-    varop | conop
-}
+op { varop | conop }
 
-qop {
-    qvarop | qconop
-}
+qop { qvarop | qconop }
 
-gconsym {
-    @specialize<varsym, ":"> | qconsym 
-}
+gconsym { @specialize<varsym, ":"> | qconsym }
 
 qual {
     Pat @specialize<varsym, "<-"> Exp |
@@ -238,9 +102,7 @@ qual {
     Exp
 }
 
-Alts {
-    Alt (";" Alt)*
-}
+Alts { Alt (";" Alt)* }
 
 Alt {
     Pat @specialize<varsym, "->"> Exp "[" @specialize<varid,"where"> Decls "]" |
@@ -248,13 +110,9 @@ Alt {
     ""
 }
 
-Gdpat {
-    guards @specialize<varsym, "->"> Exp "[" Gdpat "]"
-}
+Gdpat { guards @specialize<varsym, "->"> Exp "[" Gdpat "]" }
 
-guards {
-    @specialize<varsym, "|"> guard ("," guard)*
-}
+guards { @specialize<varsym, "|"> guard ("," guard)* }
 
 guard {
     ~ambig Pat @specialize<varsym, "<-"> Infixexp |
@@ -262,9 +120,7 @@ guard {
     ~ambig Infixexp
 }
 
-Stmts {
-    (Stmt)* Exp (";")? 
-}
+Stmts { (Stmt)* Exp (";")? }
 
 Stmt {
     Exp ";" |
@@ -273,21 +129,15 @@ Stmt {
     ";"
 }
 
-fbind {
-    qvar @specialize<varsym, "="> Exp
-}
+fbind { qvar @specialize<varsym, "="> Exp }
 
-Pat {
-    Lpat qconop Pat |
-    Lpat
-}
+Pat { Lpat qconop Pat | Lpat }
 
 Lpat {
     Apat |
     "-" (integer | float) |
     gcon "{}" |
     gcon "{" Apat ("," Apat)* "}" 
-
 }
 
 Apat {
@@ -303,9 +153,7 @@ Apat {
     @specialize<varsym, "~"> Apat  
 }
 
-Fpat {
-    qvar @specialize<varsym, "="> Pat
-}
+Fpat { qvar @specialize<varsym, "="> Pat }
 
 
 Body {
@@ -320,115 +168,71 @@ Exports {
 
 Export {
     qvar |
-    qtycon ("(" @specialize<varsym, ".."> ")" | "(" ")")? |
-    qtycon ("(" @specialize<varsym, ".."> ")" | "(" cname ("," cname)* ")" )? |
-    qtycls ("(" @specialize<varsym, ".."> ")" | "(" ")")? |
-    qtycls ("(" @specialize<varsym, ".."> ")" | "(" var ("," var)* ")" )? |
+    modid ("(" @specialize<varsym, ".."> ")" | "(" ")")? |
+    modid ("(" @specialize<varsym, ".."> ")" | "(" cname ("," cname)* ")" )? |
+    modid ("(" @specialize<varsym, ".."> ")" | "(" var ("," var)* ")" )? |
     @specialize<varid, "module"> modid
 }
 
-Topdecls {
-    Topdecl (";" Topdecl)*
-}
+Topdecls { Topdecl (";" Topdecl)* }
 
 Topdecl {
     @specialize<varid, "type"> Simpletype @specialize<varsym, "="> Type |
     @specialize<varid, "data">  (context @specialize<varsym, "=>">)? Simpletype (@specialize<varsym, "="> constrs)? (deriving)? |
     @specialize<varid, "newtype"> (context @specialize<varsym, "=>">)? Simpletype @specialize<varsym, "="> newconstr (deriving)? |
-    @specialize<varid, "class"> (scontext @specialize<varsym, "=>">)? tycls tyvar (@specialize<varid, "where"> Cdecls)? |
-    @specialize<varid, "instance"> (scontext @specialize<varsym, "=>">)? qtycls inst (@specialize<varid, "where"> Idecls)? |
+    @specialize<varid, "class"> (scontext @specialize<varsym, "=>">)? conid varid (@specialize<varid, "where"> Cdecls)? |
+    @specialize<varid, "instance"> (scontext @specialize<varsym, "=>">)? modid inst (@specialize<varid, "where"> Idecls)? |
     @specialize<varid, "default">  "(" ")" |
     @specialize<varid, "default"> "(" Type ("," Type)* ")" |
     @specialize<varid, "foreign"> Fdecl |
     Decl
 }
 
-Decls {
-    "{" Decl (";" Decl)* "}"
-}
+Decls { "{" Decl (";" Decl)* "}" }
 
-Decl {
-    Gendecl |
-    (funlhs | Pat) rhs
-}
+Decl { Gendecl | (funlhs | Pat) rhs }
 
-Cdecls {
-    "{" Cdecl (";" Cdecl)* "}"
-}
+Cdecls { "{" Cdecl (";" Cdecl)* "}" }
 
-Cdecl {
-    Gendecl |
-    (funlhs | var) rhs
-}
+Cdecl { Gendecl | (funlhs | var) rhs }
 
-Idecls {
-    "{" Idecl (";" Idecl)* "}"
-}
+Idecls { "{" Idecl (";" Idecl)* "}" }
 
-Idecl {
-    (funlhs | var) rhs |
-    ""
-}
+Idecl { (funlhs | var) rhs | "" }
 
 Gendecl {
-    vars @specialize<varsym, "::"> (context @specialize<varsym, "=>">)? Type |
+    vars @specialize<varsym, "::"> ( context @specialize<varsym, "=>">)? Type |
     fixity (integer)? ops |
     ""
 }
 
-ops {
-    op ("," op)*
-}
+ops { op ("," op)* }
 
-vars {
-    var ("," var)*
-}
+vars { var ("," var)* }
 
-Type {
-    Btype (@specialize<varsym, "->"> Type)?
-}
+Type { Btype (@specialize<varsym, "->"> Type)? }
 
-Btype {
-    (Btype)? Atype
-}
+Btype { (Btype)? Atype }
 
  Atype {
     gtycon |
-    tyvar |
+    varid |
     "(" Type ("," Type)+ ")" | 
     "[" Type "]" |
     "(" Type ")" 
  } 
 
- gtycon { 
-    gtycontok |
-    qtycon
-    }
+ gtycon { gtycontok | modid }
 
-gcon { 
-    qcon |
-    gcontok
-    }
+gcon { qcon | gcontok }
 
- context {
-     class |
-     "("  ")" |
-     "(" class ("," class)* ")"
- }
+ context { class | "("  ")" | "(" class ("," class)* ")" }
 
- class {
-     qtycls tyvar |
-     qtycls "(" tyvar Atype (Atype)* ")"
- }
+ class { modid varid | modid "(" varid Atype (Atype)* ")" }
 
-Simpletype {
-    tycon |
-    tycon tyvar (tyvar)*
-}
+Simpletype { conid | conid (varid)+ }
 
-constrs {
-    constr (@specialize<varsym, "|"> constr)*
-}
+constrs { constr (@specialize<varsym, "|"> constr)* }
 
 constr {
     con (("!")? Atype)* |
@@ -437,27 +241,15 @@ constr {
     con "{" Fielddecl ("," Fielddecl)* "}"
 }
 
-Fielddecl {
-    vars @specialize<varsym, "::"> (Type | "!" Atype)
-}
+Fielddecl { vars @specialize<varsym, "::"> (Type | "!" Atype) }
 
-deriving {
-    @specialize<varid, "deriving"> (dclass | dclasses)
-}
+deriving { @specialize<varid, "deriving"> (dclass | dclasses) }
 
-dclasses {
-    "(" ")" |
-    "(" dclass ("," dclass)* ")"
-}
+dclasses { "(" ")" | "(" dclass ("," dclass)* ")" }
 
-dclass {
-    qtycls
-}
+dclass { modid }
 
-newconstr {
-    con Atype |
-    con "{" var @specialize<varsym, "::"> Type "}"
-}
+newconstr { con Atype | con "{" var @specialize<varsym, "::"> Type "}" }
 
 scontext {
     simpleclass |
@@ -465,17 +257,15 @@ scontext {
     "(" simpleclass ("," simpleclass)* ")"
 }
 
-simpleclass {
-    qtycls tyvar
-}
+simpleclass { modid varid }
 
 inst {
     gtycon |
     "(" gtycon ")" |
-    "("gtycon (tyvar)* ")" |
-    "(" tyvar ("," tyvar)+ ")" |
-    "[" tyvar "]" |
-    "(" tyvar @specialize<varsym, "->"> tyvar ")"
+    "("gtycon (varid)* ")" |
+    "(" varid ("," varid)+ ")" |
+    "[" varid "]" |
+    "(" varid @specialize<varsym, "->"> varid ")"
 }
 
 funlhs {
@@ -489,13 +279,9 @@ rhs {
     gdrhs ( @specialize<varid, "where"> Decls )?
 }
 
-gdrhs {
-    guards @specialize<varsym, "="> Exp ( gdrhs )?
-}
+gdrhs { guards @specialize<varsym, "="> Exp ( gdrhs )? }
 
-Impdecls {
-    Impdecl (~ambig ";" Impdecl)*
-}
+Impdecls { Impdecl (~ambig ";" Impdecl)* }
 
 Impdecl {
     @specialize<varid, "import">  (@extend<varid, "qualified">)? modid (@extend<varid, "as"> modid)? (impspec)? 
@@ -510,38 +296,25 @@ impspec {
 
 import {
     var |
-    tycon "[" ("(..)" | "(" ")") "]" |
-    tycon "[" ("(..)" | "(" cname ("," cname)* ")") "]" |
-    tycls "[" ("(..)" | "(" ")") "]" |
-    tycls "[" ("(..)" | "(" var ("," var)* ")") "]"
+    conid "[" ("(..)" | "(" ")") "]" |
+    conid "[" ("(..)" | "(" cname ("," cname)* ")") "]" |
+    conid "[" ("(..)" | "(" var ("," var)* ")") "]"
 }
 
-cname {
-    var |
-    con
-}
+cname { var | con }
 
 Fdecl {
     @specialize<varid, "import"> callconv (safety)? impent var @specialize<varsym, "::"> Ftype |
     "export" callconv expent var @specialize<varsym, "::"> Ftype
 }
 
-impent {
-    (string)? 
+impent { (string)? }
 
-}
-
-expent {
-    (string)?
-}
+expent { (string)? }
 
 Ftype {
-    Frtype |
-    qtycon (Atype)* @specialize<varsym, "->"> Ftype
-}
-
-Frtype {
-    qtycon (Atype)* |
+    modid (Atype)* @specialize<varsym, "->"> Ftype |
+    modid (Atype)* |
     "()"
 }
 
@@ -550,7 +323,6 @@ fixity {@specialize<varid,"infixl"> | @specialize<varid, "infixr"> | @specialize
 safety { @extend<varid, "safe"> | @extend<varid, "unsafe">}
 
 callconv { @extend<varid, "ccall"> | @extend<varid,"stdcall"> | @extend<varid, "cplusplus"> | @extend<varid, "jvm"> | @extend<varid, "dotnet">}
-
 
 @tokens {
     special {"(" | ")" | "," | ";" | "[" | "]" | "`" | "{" | "}"}
@@ -571,8 +343,7 @@ callconv { @extend<varid, "ccall"> | @extend<varid,"stdcall"> | @extend<varid, "
     ascSymbol {"!" | "#" | "$" | "%" | "&" | "⋆" | "+" | "." | "/" |
                 "<" | "=" | ">" | "?" | "@" | "\\" | "^" | "|" | "-" |
                 "~" | ":"}
-    digit {ascDigit }
-    ascDigit {std.digit}
+    digit {std.digit}
     octit {$[0-7]}  
     hexit {digit | $[A-F] | $[a-f]}
     charesc {"a" | "b" | "f" | "n" | "r" | "t" | "v" | "\\" | "\"" | "\'" | "&"}
@@ -593,5 +364,17 @@ callconv { @extend<varid, "ccall"> | @extend<varid,"stdcall"> | @extend<varid, "
     any { graphic | space | tab }
     graphic { small | large | symbol | digit | special | quot }
     conid { large (small | large | digit | "\'")* }
-    }
+    octal {(octit)+ }
+    hexadecimal { (hexit)+ }
+    integer { decimal | "0o" octal | "0O" octal | "0x" hexadecimal | "0X" hexadecimal }
+    float { decimal "." decimal (exponent)? }
+    exponent { ("e" | "E") ("+" | "-")? decimal }
+    char { "\'" (graphic | space | escape) "\'" }
+    escape { "\\" (charesc | ascii | decimal | "o" octal | "x" hexadecimal) }
+    gap { "\\" (whitechar)+ "\\" } 
+    whitechar { newline | vertab | space | tab | uniWhite }
+    newline { return linefeed | return | linefeed | formfeed }
+    anyseq {  (graphic | whitechar)* }
+    comment { dashes ((any)+)? newline }
+}
 
