@@ -1,4 +1,4 @@
-node_modules/
-src/parser.*
-dist/
+node_modules
+dist
 .cache
+src/parser.*
