@@ -1,16 +1,12 @@
-//TODO: Unicode support
+//TODO: Unicode support 
 
 @precedence {
-    modid, 
     conid, ascLarge,
     varid, small,
     varsym, symbol,
     float, integer,
     nl @cut,
-    record, 
-    decl,
-    patternGuard,
-    typeA
+    highprec
 }
 
 @top Module{
@@ -89,7 +85,7 @@ tycls {
 }
 
 modid {
-    !modid (conid ".")* conid
+    !highprec (conid ".")* conid
 }
 
 qvarid {
@@ -109,11 +105,11 @@ qtycls {
 }
 
 qvarsym {
-    (modid ".")? varsym
+    (modid ".")? !highprec varsym
 }
 
 qconsym {
-    (modid ".")? consym
+    (modid ".")? !highprec consym
 }
 
 octal {
@@ -155,8 +151,7 @@ gap {
 //The general syntax for expressions. Type signature might be included. 
 
 Exp {
-    Infixexp @specialize<varsym, "::"> (context @specialize<varsym, "=>">)? Type |
-    Infixexp !typeA
+    Infixexp (!highprec @specialize<varsym, "::"> (context @specialize<varsym, "=>">)? Type)?
 }
 
 // Infix operators application for expressions.
@@ -164,8 +159,7 @@ Exp {
 Infixexp {
     Lexp qop Infixexp |
     "-" Infixexp |
-    Lexp |
-    Exp qop Exp
+    Lexp
 }
 
 // Lambda abstraction and expressions introduced by keywords.
@@ -230,7 +224,7 @@ conop {
 }
 
 qconop {
-    gconsym | !decl "`" qconid "`"
+    gconsym | !highprec "`" qconid "`"
 }
 
 op {
@@ -242,7 +236,7 @@ qop {
 }
 
 gconsym {
-    @specialize<varsym, ":"> | qconsym 
+    !highprec @specialize<varsym, ":"> | qconsym 
 }
 
 // Qualifiers could be either generators, local bindings or boolean guards.
@@ -262,13 +256,13 @@ Alts {
 // Definition of a pattern match. 
 
 Alt {
-    Pat @specialize<varsym, "->"> Exp "[" @specialize<varid,"where"> Decls "]" |
-    Pat Gdpat "[" @specialize<varid, "where"> Decls "]" |
+    Pat @specialize<varsym, "->"> Exp (@specialize<varid,"where"> Decls)? |
+    Pat Gdpat (@specialize<varid, "where"> Decls)? |
     ""
 }
 
 Gdpat {
-    guards @specialize<varsym, "->"> Exp "[" Gdpat "]"
+    guards @specialize<varsym, "->"> Exp Gdpat?
 }
 
 // The list of guards.
@@ -323,8 +317,8 @@ Lpat {
 Apat {
     var (@specialize<varsym, "@"> Apat )? |
     gcon |
-    qcon !record "{}" |
-    qcon !record "{" Fpat ("," Fpat)* "}"
+    qcon !highprec "{}" |
+    qcon !highprec "{" Fpat ("," Fpat)* "}"
     literal |
     @specialize<varid, "_"> |
     "(" Pat ")" |
@@ -355,10 +349,7 @@ Exports {
 
 Export {
     qvar |
-    qtycon ("(" @specialize<varsym, ".."> ")" | "(" ")")? |
-    qtycon ("(" @specialize<varsym, ".."> ")" | "(" cname ("," cname)* ")" )? |
-    qtycls ("(" @specialize<varsym, ".."> ")" | "(" ")")? |
-    qtycls ("(" @specialize<varsym, ".."> ")" | "(" var ("," var)* ")" )? |
+    qtycls ("(" @specialize<varsym, ".."> ")" | "(" ")" | "(" cname ("," cname)* ")" )? |
     @specialize<varid, "module"> modid
 }
 
@@ -444,7 +435,7 @@ vars {
 // General function type syntax.
 
 Type {
-    Btype (@specialize<varsym, "->"> Type)?
+    Btype (!highprec @specialize<varsym, "->"> Type)?
 }
 
 // Type application.
@@ -461,7 +452,12 @@ Atype {
     "(" Type ("," Type)+ ")" | 
     "[" Type "]" |
     "(" Type ")" 
-} 
+}
+
+// foo = case y of pat | let x = 5 in x :: Int -> Bool
+
+// Wrong: foo = case y of pat | (let x = 5 in x :: Int) -> Bool
+// Right: foo = case y of pat | let x = 5 in (x :: Int -> Bool)
 
 gtycon { 
     gtycontok |
@@ -583,10 +579,7 @@ impspec {
 
 import {
     var |
-    tycon "[" ("(..)" | "(" ")") "]" |
-    tycon "[" ("(..)" | "(" cname ("," cname)* ")") "]" |
-    tycls "[" ("(..)" | "(" ")") "]" |
-    tycls "[" ("(..)" | "(" var ("," var)* ")") "]"
+    tycon ("(..)" | "(" ")" | "(" cname ("," cname)* ")")?
 }
 
 cname {
