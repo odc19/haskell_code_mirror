@@ -63,11 +63,14 @@ comment {
     dashes (any (any)*)? newline
 }
 
-// The syntax for a block of comment lines
+// The syntax for a block of comment lines.
+// You should be allowed to have a comment block inside another comment block.
 
 ncomment {
     opencom anyseq (ncomment anyseq)* closecom
 }
+
+// The characters which should be allowed in the comment block
 
 anyseq {
     (graphic | whitechar)*
@@ -149,17 +152,23 @@ gap {
     "\\" whitechar (whitechar)* "\\"
 }
 
+//The general syntax for expressions. Type signature might be included. 
+
 Exp {
     Infixexp @specialize<varsym, "::"> (context @specialize<varsym, "=>">)? Type |
     Infixexp !typeA
 }
 
+// Infix operators application for expressions.
+
 Infixexp {
     Lexp qop Infixexp |
     "-" Infixexp |
-    Lexp|
+    Lexp |
     Exp qop Exp
 }
+
+// Lambda abstraction and expressions introduced by keywords.
 
 Lexp {
     "\\" (Apat)+ @specialize<varsym, "->"> Exp |
@@ -170,9 +179,13 @@ Lexp {
     Fexp
 }
 
+// Function application for expressions.
+
 Fexp {
     (Fexp)? Aexp
 }
+
+// Expressions aplications, such as: sections, lists, tuples, sequences etc.
 
 Aexp {
     qvar |
@@ -186,7 +199,7 @@ Aexp {
     qcon "{}" |
     qcon "{" fbind ("," fbind)* "}" |
     Aexp "{" fbind ("," fbind)* "}"
-}
+} 
 
 var {
     varid | "(" varsym ")"
@@ -232,15 +245,21 @@ gconsym {
     @specialize<varsym, ":"> | qconsym 
 }
 
+// Qualifiers could be either generators, local bindings or boolean guards.
+
 qual {
     Pat @specialize<varsym, "<-"> Exp |
     @specialize<varid, "let"> Decls |
     Exp
 }
 
+// List of alternative pattern matches.
+
 Alts {
     Alt (";" Alt)*
 }
+
+// Definition of a pattern match. 
 
 Alt {
     Pat @specialize<varsym, "->"> Exp "[" @specialize<varid,"where"> Decls "]" |
@@ -252,9 +271,14 @@ Gdpat {
     guards @specialize<varsym, "->"> Exp "[" Gdpat "]"
 }
 
+// The list of guards.
+
 guards {
     @specialize<varsym, "|"> guard ("," guard)*
 }
+
+// Definition of a guard. Could be a pattern guard, a local binding or
+// a boolean guard.
 
 guard {
     ~ambig Pat @specialize<varsym, "<-"> Infixexp |
@@ -262,9 +286,13 @@ guard {
     ~ambig Infixexp
 }
 
+// The list of statements.
+
 Stmts {
     (Stmt)* Exp (";")? 
 }
+
+// Definition of statement. 
 
 Stmt {
     Exp ";" |
@@ -276,6 +304,8 @@ Stmt {
 fbind {
     qvar @specialize<varsym, "="> Exp
 }
+
+// Definition of pattern.
 
 Pat {
     Lpat qconop Pat |
@@ -307,16 +337,21 @@ Fpat {
     qvar @specialize<varsym, "="> Pat
 }
 
+// The block where declarations are listed.
 
 Body {
     "{" Impdecls (~ambig ";" Topdecls)? "}" |
     "{" Topdecls "}"
 }
 
+// The list of exports.
+
 Exports {
     "(" (",")? ")" |
     "(" Export ("," Export)* (",")? ")"   
 }
+
+// The export types.
 
 Export {
     qvar |
@@ -327,9 +362,13 @@ Export {
     @specialize<varid, "module"> modid
 }
 
+// The list of top declarations.
+
 Topdecls {
     Topdecl (";" Topdecl)*
 }
+
+// Top declaration types.
 
 Topdecl {
     @specialize<varid, "type"> Simpletype @specialize<varsym, "="> Type |
@@ -343,32 +382,46 @@ Topdecl {
     Decl
 }
 
+// The list of declarations.
+
 Decls {
     "{" Decl (";" Decl)* "}"
 }
+
+// Definition of a declaration.
 
 Decl {
     Gendecl |
     (funlhs | Pat) rhs
 }
 
+// The list of class declarations.
+
 Cdecls {
     "{" Cdecl (";" Cdecl)* "}"
 }
+
+// Definition of a class declaration.
 
 Cdecl {
     Gendecl |
     (funlhs | var) rhs
 }
 
+// The list of instance declarations.
+
 Idecls {
     "{" Idecl (";" Idecl)* "}"
 }
+
+// Definition of an instance declaration.
 
 Idecl {
     (funlhs | var) rhs |
     ""
 }
+
+// Definition of a general declaration: type signature or fixity declaration.
 
 Gendecl {
     vars @specialize<varsym, "::"> (context @specialize<varsym, "=>">)? Type |
@@ -376,59 +429,75 @@ Gendecl {
     ""
 }
 
+// The list of operators.
+
 ops {
     op ("," op)*
 }
+
+// The list of variables.
 
 vars {
     var ("," var)*
 }
 
+// General function type syntax.
+
 Type {
     Btype (@specialize<varsym, "->"> Type)?
 }
+
+// Type application.
 
 Btype {
     (Btype)? Atype
 }
 
- Atype {
+// Application types.
+
+Atype {
     gtycon |
     tyvar |
     "(" Type ("," Type)+ ")" | 
     "[" Type "]" |
     "(" Type ")" 
- } 
+} 
 
- gtycon { 
+gtycon { 
     gtycontok |
     qtycon
-    }
+}
 
 gcon { 
     qcon |
     gcontok
-    }
+}
 
- context {
-     class |
-     "("  ")" |
-     "(" class ("," class)* ")"
- }
+// Definition of a context. should be a class or a list of classes.
 
- class {
+context {
+    class |
+    "("  ")" |
+    "(" class ("," class)* ")"
+}
+
+class {
      qtycls tyvar |
      qtycls "(" tyvar Atype (Atype)* ")"
- }
+}
 
 Simpletype {
     tycon |
-    tycon tyvar (tyvar)*
+    tycon (tyvar)+
 }
+
+// The list of constructor applications.
 
 constrs {
     constr (@specialize<varsym, "|"> constr)*
 }
+
+// Definition of constructor application.
 
 constr {
     con (("!")? Atype)* |
@@ -493,9 +562,13 @@ gdrhs {
     guards @specialize<varsym, "="> Exp ( gdrhs )?
 }
 
+// The list of import declarations.
+
 Impdecls {
     Impdecl (~ambig ";" Impdecl)*
 }
+
+// Definition of import declaration.
 
 Impdecl {
     @specialize<varid, "import">  (@extend<varid, "qualified">)? modid (@extend<varid, "as"> modid)? (impspec)? 
@@ -520,6 +593,8 @@ cname {
     var |
     con
 }
+
+// Definition of foreign delcaration.
 
 Fdecl {
     @specialize<varid, "import"> callconv (safety)? impent var @specialize<varsym, "::"> Ftype |

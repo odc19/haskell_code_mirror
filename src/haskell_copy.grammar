@@ -1,3 +1,6 @@
+// data Foo a should parse as Topdecl(Simpletype)
+// data Foo a => Bar a should parse as Topdecl(Constraint, Simpletype)
+
 @precedence {
     modid
 }
