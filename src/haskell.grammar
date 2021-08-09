@@ -413,7 +413,11 @@ Idecl {
 }
 
 // Definition of a general declaration: type signature or fixity declaration.
-
+//
+// Examples:
+//
+//  a, b, c, :: Num x => x
+//  infixr 5 ^, *, &
 Gendecl {
     vars @specialize<varsym, "::"> (context @specialize<varsym, "=>">)? Type |
     fixity (integer)? ops |
@@ -421,13 +425,15 @@ Gendecl {
 }
 
 // The list of operators.
-
+//
+// Example: +, -, *
 ops {
     op ("," op)*
 }
 
 // The list of variables.
-
+//
+// Example: a, b, c
 vars {
     var ("," var)*
 }
@@ -453,11 +459,6 @@ Atype {
     "[" Type "]" |
     "(" Type ")" 
 }
-
-// foo = case y of pat | let x = 5 in x :: Int -> Bool
-
-// Wrong: foo = case y of pat | (let x = 5 in x :: Int) -> Bool
-// Right: foo = case y of pat | let x = 5 in (x :: Int -> Bool)
 
 gtycon { 
     gtycontok |
