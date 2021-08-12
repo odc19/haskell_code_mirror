@@ -1,11 +1,7 @@
 //TODO: Unicode support 
 
 @precedence {
-    conid, ascLarge,
-    varid, small,
-    varsym, symbol,
     float, integer,
-    nl @cut,
     highprec
 }
 
@@ -15,16 +11,22 @@
 }
 
 ModuleName {
-    modid
+    Modid
 }
 
 //The characters and sets of characters to be ignored when matching the grammar.
 
 @skip {
-    whitechar | comment | ncomment
+    whitechar | Comment | Ncomment
 }
 
 // The most basic data types. (to be modified).
+// Examples:
+//
+// integer: 321, -2342, 31298389
+// float: 1321.332, 23245.298, -452.9
+// char: 'a', 'F', '!'
+// string: "asdfghjkl"
 
 literal {
     !integer integer |
@@ -33,37 +35,34 @@ literal {
     string
 }
 
-// The different types of white characters which may occur in a program. 
-
-whitechar {
-    newline |
-    vertab |
-    space |
-    tab |
-    uniWhite
-}
-
-// The syntax for terminating a line of code and starting a new one
-
-newline {
-    !nl return linefeed |
-    return |
-    linefeed |
-    formfeed
-}
-
-
 // The syntax for a comment line
+// Example:
+//
+// //This is a comment line.
 
-comment {
+Comment {
     dashes (any (any)*)? newline
 }
 
 // The syntax for a block of comment lines.
 // You should be allowed to have a comment block inside another comment block.
+// Examples:
+//
+// {-
+// This is a block
+// of commented lines.
+// -}
+//
+// {-
+//      Outer comment block
+// {- 
+//     Inner comment block
+// -}
+// -}
 
-ncomment {
-    opencom anyseq (ncomment anyseq)* closecom
+
+Ncomment {
+    opencom anyseq (Ncomment anyseq)* closecom
 }
 
 // The characters which should be allowed in the comment block
@@ -72,44 +71,32 @@ anyseq {
     (graphic | whitechar)*
 }
 
-tyvar {
-    varid
-}
-
-tycon {
-    conid
-}
-
-tycls {
-    conid
-}
-
-modid {
+Modid {
     !highprec (conid ".")* conid
 }
 
 qvarid {
-    (modid ".")? varid
+    (Modid ".")? varid
 }
 
 qconid {
-    (modid ".")? conid
+    (Modid ".")? conid
 }
 
 qtycon {
-    (modid ".")? tycon
+    (Modid ".")? tycon
 }
 
 qtycls {
-    (modid ".")? tycls
+    (Modid ".")? tycls
 }
 
 qvarsym {
-    (modid ".")? !highprec varsym
+    (Modid ".")? !highprec varsym
 }
 
 qconsym {
-    (modid ".")? !highprec consym
+    (Modid ".")? !highprec consym
 }
 
 octal {
@@ -148,40 +135,68 @@ gap {
     "\\" whitechar (whitechar)* "\\"
 }
 
-//The general syntax for expressions. Type signature might be included. 
+// The general syntax for expressions. Type signature might be included. 
+// Example:
+//
+// f x y :: Int
 
 Exp {
-    Infixexp (!highprec @specialize<varsym, "::"> (context @specialize<varsym, "=>">)? Type)?
+    infixexp (!highprec @specialize<varsym, "::"> (context @specialize<varsym, "=>">)? Type)?
 }
 
 // Infix operators application for expressions.
+// Examples:
+//
+// - f x + y
+// a `concatPrint` b
 
-Infixexp {
-    Lexp qop Infixexp |
-    "-" Infixexp |
-    Lexp
+infixexp {
+    lexp qop infixexp |
+    "-" infixexp |
+    lexp
 }
 
 // Lambda abstraction and expressions introduced by keywords.
+// Examples:
+//
+// \ x -> x + 1
+// let x = 10 in x + y 
+// if e1 then e2 else e3
+//
+// case xs of [] -> "empty."  
+//            [x] -> "a singleton list."  
+//            xs -> "a list with many elements." 
+//
+// do l <- getLine  
+//    return (words l)
 
-Lexp {
-    "\\" (Apat)+ @specialize<varsym, "->"> Exp |
+lexp {
+    "\\" (apat)+ @specialize<varsym, "->"> Exp |
     @specialize<varid, "let"> Decls @specialize<varid, "in"> Exp |
     @specialize<varid, "if"> Exp (";")? @specialize<varid, "then"> Exp (";")? @specialize<varid, "else"> Exp |
     @specialize<varid, "case"> Exp @specialize<varid, "of"> "{" Alts "}" |
     @specialize<varid, "do"> "{" Stmts "}" |
-    Fexp
+    fexp
 }
 
 // Function application for expressions.
 
-Fexp {
-    (Fexp)? Aexp
+fexp {
+    (fexp)? aexp
 }
 
 // Expressions aplications, such as: sections, lists, tuples, sequences etc.
+// Examples:
+//
+// (e1, e2, e3)
+// [e1, e2, e3]
+// [e1, e2 ..]
+// [e1, e2 .. e3]
+// (e1 op)
+// (op e1)
+// C2 {f1 :: Int,  f3,f4 :: Char}
 
-Aexp {
+aexp {
     qvar |
     gcon |
     literal |
@@ -189,10 +204,11 @@ Aexp {
     "(" Exp ("," Exp)+ ")" |
     "[" Exp ("," Exp)? @specialize<varsym, ".."> (Exp)? "]" |
     "[" Exp @specialize<varsym, "|"> qual ("," qual)+ "]" |
-    "(" Infixexp qop")" |
+    "(" infixexp qop ")" |
+    "("qop infixexp ")" |
     qcon "{}" |
     qcon "{" fbind ("," fbind)* "}" |
-    Aexp "{" fbind ("," fbind)* "}"
+    aexp "{" fbind ("," fbind)* "}"
 } 
 
 var {
@@ -275,9 +291,9 @@ guards {
 // a boolean guard.
 
 guard {
-    ~ambig Pat @specialize<varsym, "<-"> Infixexp |
+    ~ambig Pat @specialize<varsym, "<-"> infixexp |
     @specialize<varid, "let"> Decls |
-    ~ambig Infixexp
+    ~ambig infixexp
 }
 
 // The list of statements.
@@ -302,20 +318,20 @@ fbind {
 // Definition of pattern.
 
 Pat {
-    Lpat qconop Pat |
-    Lpat
+    lpat qconop Pat |
+    lpat
 }
 
-Lpat {
-    Apat |
+lpat {
+    apat |
     "-" (integer | float) |
     gcon "{}" |
-    gcon "{" Apat ("," Apat)* "}" 
+    gcon "{" apat ("," apat)* "}" 
 
 }
 
-Apat {
-    var (@specialize<varsym, "@"> Apat )? |
+apat {
+    var (@specialize<varsym, "@"> apat )? |
     gcon |
     qcon !highprec "{}" |
     qcon !highprec "{" Fpat ("," Fpat)* "}"
@@ -324,7 +340,7 @@ Apat {
     "(" Pat ")" |
     "(" Pat ("," Pat)+ ")" |
     "[" Pat ("," Pat)* "]" |
-    @specialize<varsym, "~"> Apat  
+    @specialize<varsym, "~"> apat  
 }
 
 Fpat {
@@ -350,7 +366,7 @@ Exports {
 Export {
     qvar |
     qtycls ("(" @specialize<varsym, ".."> ")" | "(" ")" | "(" cname ("," cname)* ")" )? |
-    @specialize<varid, "module"> modid
+    @specialize<varid, "module"> Modid
 }
 
 // The list of top declarations.
@@ -418,6 +434,7 @@ Idecl {
 //
 //  a, b, c, :: Num x => x
 //  infixr 5 ^, *, &
+
 Gendecl {
     vars @specialize<varsym, "::"> (context @specialize<varsym, "=>">)? Type |
     fixity (integer)? ops |
@@ -427,6 +444,7 @@ Gendecl {
 // The list of operators.
 //
 // Example: +, -, *
+
 ops {
     op ("," op)*
 }
@@ -434,6 +452,8 @@ ops {
 // The list of variables.
 //
 // Example: a, b, c
+
+
 vars {
     var ("," var)*
 }
@@ -545,9 +565,9 @@ inst {
 }
 
 funlhs {
-    var Apat "{" Apat "}" |
+    var apat "{" apat "}" |
     Pat varop Pat |
-    "(" funlhs ")" Apat "{" Apat "}"
+    "(" funlhs ")" apat "{" apat "}"
 }
 
 rhs {
@@ -568,7 +588,7 @@ Impdecls {
 // Definition of import declaration.
 
 Impdecl {
-    @specialize<varid, "import">  (@extend<varid, "qualified">)? modid (@extend<varid, "as"> modid)? (impspec)? 
+    @specialize<varid, "import">  (@extend<varid, "qualified">)? Modid (@extend<varid, "as"> Modid)? (impspec)? 
 }
 
 impspec {
@@ -605,11 +625,11 @@ expent {
 }
 
 Ftype {
-    Frtype |
+    frtype |
     qtycon (Atype)* @specialize<varsym, "->"> Ftype
 }
 
-Frtype {
+frtype {
     qtycon (Atype)* |
     "()"
 }
@@ -634,14 +654,11 @@ callconv { @extend<varid, "ccall"> | @extend<varid,"stdcall"> | @extend<varid, "
     opencom {"{-"}
     closecom {"-}"}
     quot {"\"" | "\'" } 
-    ascSmall {std.asciiLowercase}
     underline {"_"}
-    ascLarge {std.asciiUppercase}
     ascSymbol {"!" | "#" | "$" | "%" | "&" | "⋆" | "+" | "." | "/" |
                 "<" | "=" | ">" | "?" | "@" | "\\" | "^" | "|" | "-" |
                 "~" | ":"}
-    digit {ascDigit }
-    ascDigit {std.digit}
+    digit {std.digit}
     octit {$[0-7]}  
     hexit {digit | $[A-F] | $[a-f]}
     charesc {"a" | "b" | "f" | "n" | "r" | "t" | "v" | "\\" | "\"" | "\'" | "&"}
@@ -649,18 +666,23 @@ callconv { @extend<varid, "ccall"> | @extend<varid,"stdcall"> | @extend<varid, "
     "ACK" |	"BEL" | "BS" | "HT" | "LF" | "VT" | "FF" | "CR" | "SO" |
     "SI" | "DLE" | "DC1" | "DC2" | "DC3" | "DC4" | "NAK" | "SYN" | "ETB" | 
     "CAN"| "EM" | "SUB" | "ESC" | "FS" | "GS" | "RS" | "US" | "SP" | "DEL"}
-    cntrl {ascLarge | "@" | "[" | "]" | "\\" | "^" | "_"}
+    cntrl {large | "@" | "[" | "]" | "\\" | "^" | "_"}
     gcontok {"()" | "[]" | "(," (",")* ")" }
     gtycontok {"()" | "[]" | "(->)" | "(," (",")* ")" }
     decimal {(digit)+}
     varid { small (small | large | digit | "\'")* }
-    small { ascSmall | underline}
-    large { ascLarge }
+    small { std.asciiLowercase | underline}
+    large { std.asciiUppercase }
     varsym { (symbol)+ }
     consym { ":" (symbol)+ }
     symbol { ascSymbol }
     any { graphic | space | tab }
     graphic { small | large | symbol | digit | special | quot }
     conid { large (small | large | digit | "\'")* }
+    whitechar { newline | vertab | space | tab | uniWhite }
+    newline { return linefeed | return | linefeed | formfeed }
+    tycon { conid } 
+    tycls { conid } 
+    tyvar { varid }
     }
 
