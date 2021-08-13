@@ -35,14 +35,7 @@ literal {
     string
 }
 
-// The syntax for a comment line
-// Example:
-//
-// //This is a comment line.
 
-Comment {
-    dashes (any (any)*)? newline
-}
 
 // The syntax for a block of comment lines.
 // You should be allowed to have a comment block inside another comment block.
@@ -61,79 +54,51 @@ Comment {
 // -}
 
 
-Ncomment {
-    opencom anyseq (Ncomment anyseq)* closecom
-}
 
-// The characters which should be allowed in the comment block
-
-anyseq {
-    (graphic | whitechar)*
-}
 
 Modid {
-    !highprec (conid ".")* conid
+    !highprec (conid @extend<varsym, ".">)* conid
 }
 
 qvarid {
-    (Modid ".")? varid
+    (Modid @extend<varsym, ".">)? varid ~vari
 }
 
 qconid {
-    (Modid ".")? conid
-}
-
-qtycon {
-    (Modid ".")? tycon
-}
-
-qtycls {
-    (Modid ".")? tycls
+    (Modid @extend<varsym, ".">)? conid ~context
 }
 
 qvarsym {
-    (Modid ".")? !highprec varsym
+    (Modid @extend<varsym, ".">)? !highprec varsym
 }
 
 qconsym {
-    (Modid ".")? !highprec consym
+    (Modid @extend<varsym, ".">)? !highprec consym
 }
 
-octal {
-    octit (octit)*
+@skip {} {
+
+    Ncomment {
+    opencom anyseq (Ncomment anyseq)* closecom
+    }
+
+    // The characters which should be allowed in the comment block
+    
+    anyseq {
+    (graphic | whitechar)*
+    }
+
+    // The syntax for a comment line
+    // Example:
+    //
+    // //This is a comment line.
+
+    Comment {
+    dashes (any)* newline
+    }
 }
 
-hexadecimal {
-    hexit (hexit)*
-}
 
-integer {
-    !integer decimal | "0o" octal | "0O" octal | "0x" hexadecimal | "0X" hexadecimal 
-}
-
-float {
-    !float decimal "." decimal (exponent)?
-}
-
-exponent {
-    ("e" | "E") ("+" | "-")? decimal
-}
-
-char {
-    "\'" (graphic | space | escape) "\'" 
-}
-
-string {
-    "\"" (graphic | space | escape | gap) "\"" 
-}
-
-escape {
-    "\\" (charesc | ascii | decimal | "o" octal | "x" hexadecimal)
-}
-
-gap {
-    "\\" whitechar (whitechar)* "\\"
-}
 
 // The general syntax for expressions. Type signature might be included. 
 // Example:
@@ -141,7 +106,7 @@ gap {
 // f x y :: Int
 
 Exp {
-    infixexp (!highprec @specialize<varsym, "::"> (context @specialize<varsym, "=>">)? Type)?
+    infixexp (!highprec @specialize<varsym, "::"> (Context @specialize<varsym, "=>">)? Type)?
 }
 
 // Infix operators application for expressions.
@@ -152,7 +117,7 @@ Exp {
 
 infixexp {
     lexp qop infixexp |
-    "-" infixexp |
+    @extend<varsym, "-"> infixexp |
     lexp
 }
 
@@ -171,7 +136,7 @@ infixexp {
 //    return (words l)
 
 lexp {
-    "\\" (apat)+ @specialize<varsym, "->"> Exp |
+    @specialize<varsym, "\\"> (apat)+ @specialize<varsym, "->"> Exp |
     @specialize<varid, "let"> Decls @specialize<varid, "in"> Exp |
     @specialize<varid, "if"> Exp (";")? @specialize<varid, "then"> Exp (";")? @specialize<varid, "else"> Exp |
     @specialize<varid, "case"> Exp @specialize<varid, "of"> "{" Alts "}" |
@@ -198,7 +163,7 @@ fexp {
 
 aexp {
     qvar |
-    gcon |
+    gcon ~gcon |
     literal |
     "(" Exp ")" |
     "(" Exp ("," Exp)+ ")" |
@@ -206,13 +171,13 @@ aexp {
     "[" Exp @specialize<varsym, "|"> qual ("," qual)+ "]" |
     "(" infixexp qop ")" |
     "("qop infixexp ")" |
-    qcon "{}" |
-    qcon "{" fbind ("," fbind)* "}" |
+    qcon ~qcon "{}" |
+    qcon ~qcon "{" fbind ("," fbind)* "}" |
     aexp "{" fbind ("," fbind)* "}"
 } 
 
 var {
-    varid | "(" varsym ")"
+    varid ~vari | "(" varsym ")"
 }
 
 qvar {
@@ -220,7 +185,7 @@ qvar {
 }
 
 con {
-    conid | "(" consym ")"
+    conid ~context | "(" consym ")"
 }
 
 qcon {
@@ -256,6 +221,11 @@ gconsym {
 }
 
 // Qualifiers could be either generators, local bindings or boolean guards.
+//Examples:
+//
+// x <- x % 2 == 0
+// let x = 2, y = 3
+
 
 qual {
     Pat @specialize<varsym, "<-"> Exp |
@@ -264,12 +234,19 @@ qual {
 }
 
 // List of alternative pattern matches.
+// Example:
+// 
+// alt1; alt2; ... ; altn
 
 Alts {
     Alt (";" Alt)*
 }
 
-// Definition of a pattern match. 
+// Definition of a pattern match.
+// Examples:
+//
+// pat -> exp
+// pat | guard1, guard2, ... , guardn
 
 Alt {
     Pat @specialize<varsym, "->"> Exp (@specialize<varid,"where"> Decls)? |
@@ -282,6 +259,9 @@ Gdpat {
 }
 
 // The list of guards.
+// Example:
+//
+// | guard1, guard2, ... , guardn
 
 guards {
     @specialize<varsym, "|"> guard ("," guard)*
@@ -289,6 +269,12 @@ guards {
 
 // Definition of a guard. Could be a pattern guard, a local binding or
 // a boolean guard.
+// Examples:
+//
+// []  <- "Empty string"
+// [x] <- "Singleton list"
+// xs  <- "Many elements list"
+// let parity = x `mod` 2, parity == 0 = "even"
 
 guard {
     ~ambig Pat @specialize<varsym, "<-"> infixexp |
@@ -324,15 +310,15 @@ Pat {
 
 lpat {
     apat |
-    "-" (integer | float) |
-    gcon "{}" |
-    gcon "{" apat ("," apat)* "}" 
+    @extend<varsym, "-"> (integer | float) |
+    gcon ~gcon "{}" |
+    gcon ~gcon "{" apat ("," apat)* "}" 
 
 }
 
 apat {
     var (@specialize<varsym, "@"> apat )? |
-    gcon |
+    gcon ~gcon |
     qcon !highprec "{}" |
     qcon !highprec "{" Fpat ("," Fpat)* "}"
     literal |
@@ -365,7 +351,7 @@ Exports {
 
 Export {
     qvar |
-    qtycls ("(" @specialize<varsym, ".."> ")" | "(" ")" | "(" cname ("," cname)* ")" )? |
+    qconid ("(" @specialize<varsym, ".."> ")" | "(" ")" | "(" cname ("," cname)* ")" )? |
     @specialize<varid, "module"> Modid
 }
 
@@ -379,10 +365,10 @@ Topdecls {
 
 Topdecl {
     @specialize<varid, "type"> Simpletype @specialize<varsym, "="> Type |
-    @specialize<varid, "data">  (context @specialize<varsym, "=>">)? Simpletype (@specialize<varsym, "="> constrs)? (deriving)? |
-    @specialize<varid, "newtype"> (context @specialize<varsym, "=>">)? Simpletype @specialize<varsym, "="> newconstr (deriving)? |
-    @specialize<varid, "class"> (scontext @specialize<varsym, "=>">)? tycls tyvar (@specialize<varid, "where"> Cdecls)? |
-    @specialize<varid, "instance"> (scontext @specialize<varsym, "=>">)? qtycls inst (@specialize<varid, "where"> Idecls)? |
+    @specialize<varid, "data">  (Context @specialize<varsym, "=>">)? Simpletype (@specialize<varsym, "="> constrs)? (deriving)? |
+    @specialize<varid, "newtype"> (Context @specialize<varsym, "=>">)? Simpletype @specialize<varsym, "="> newconstr (deriving)? |
+    @specialize<varid, "class"> ( Context @specialize<varsym, "=>">)? conid ~context varid (@specialize<varid, "where"> Cdecls)? |
+    @specialize<varid, "instance"> (Context @specialize<varsym, "=>">)? qconid inst (@specialize<varid, "where"> Idecls)? |
     @specialize<varid, "default">  "(" ")" |
     @specialize<varid, "default"> "(" Type ("," Type)* ")" |
     @specialize<varid, "foreign"> Fdecl |
@@ -436,7 +422,7 @@ Idecl {
 //  infixr 5 ^, *, &
 
 Gendecl {
-    vars @specialize<varsym, "::"> (context @specialize<varsym, "=>">)? Type |
+    vars @specialize<varsym, "::"> (Context @specialize<varsym, "=>">)? Type |
     fixity (integer)? ops |
     ""
 }
@@ -474,38 +460,31 @@ Btype {
 
 Atype {
     gtycon |
-    tyvar |
+    varid |
     "(" Type ("," Type)+ ")" | 
     "[" Type "]" |
     "(" Type ")" 
 }
 
 gtycon { 
-    gtycontok |
-    qtycon
+    ~context gtycontok |
+    qconid ~context
 }
 
 gcon { 
-    qcon |
+    qcon ~qcon |
     gcontok
 }
 
 // Definition of a context. should be a class or a list of classes.
 
-context {
-    class |
-    "("  ")" |
-    "(" class ("," class)* ")"
-}
-
-class {
-     qtycls tyvar |
-     qtycls "(" tyvar Atype (Atype)* ")"
+Context {
+    Type 
 }
 
 Simpletype {
-    tycon |
-    tycon (tyvar)+
+    conid |
+    conid ~context (varid)+
 }
 
 // The list of constructor applications.
@@ -517,14 +496,14 @@ constrs {
 // Definition of constructor application.
 
 constr {
-    con (("!")? Atype)* |
-    (Btype | "!" Atype) conop (Btype | "!" Atype) |
+    con ((@extend<varsym, "!">)? Atype)* |
+    (Btype | @extend<varsym, "!"> Atype) conop (Btype | @extend<varsym, "!"> Atype) |
     con "{" "}" |
     con "{" Fielddecl ("," Fielddecl)* "}"
 }
 
 Fielddecl {
-    vars @specialize<varsym, "::"> (Type | "!" Atype)
+    vars @specialize<varsym, "::"> (Type | @extend<varsym, "!"> Atype)
 }
 
 deriving {
@@ -537,7 +516,7 @@ dclasses {
 }
 
 dclass {
-    qtycls
+    qconid
 }
 
 newconstr {
@@ -545,23 +524,13 @@ newconstr {
     con "{" var @specialize<varsym, "::"> Type "}"
 }
 
-scontext {
-    simpleclass |
-    "(" ")" |
-    "(" simpleclass ("," simpleclass)* ")"
-}
-
-simpleclass {
-    qtycls tyvar
-}
-
 inst {
     gtycon |
-    "(" gtycon ")" |
-    "("gtycon (tyvar)* ")" |
-    "(" tyvar ("," tyvar)+ ")" |
-    "[" tyvar "]" |
-    "(" tyvar @specialize<varsym, "->"> tyvar ")"
+    ~context "(" gtycon ")" |
+    "("gtycon (varid)* ")" |
+    "(" varid ("," varid)+ ")" |
+    ~context "[" varid "]" |
+    "(" varid @specialize<varsym, "->"> varid ")"
 }
 
 funlhs {
@@ -600,7 +569,7 @@ impspec {
 
 import {
     var |
-    tycon ("(..)" | "(" ")" | "(" cname ("," cname)* ")")?
+    conid ("(..)" | "(" ")" | "(" cname ("," cname)* ")")?
 }
 
 cname {
@@ -612,7 +581,7 @@ cname {
 
 Fdecl {
     @specialize<varid, "import"> callconv (safety)? impent var @specialize<varsym, "::"> Ftype |
-    "export" callconv expent var @specialize<varsym, "::"> Ftype
+    @specialize<varid, "export"> callconv expent var @specialize<varsym, "::"> Ftype
 }
 
 impent {
@@ -626,11 +595,11 @@ expent {
 
 Ftype {
     frtype |
-    qtycon (Atype)* @specialize<varsym, "->"> Ftype
+    qconid (Atype)* @specialize<varsym, "->"> Ftype
 }
 
 frtype {
-    qtycon (Atype)* |
+    qconid (Atype)* |
     "()"
 }
 
@@ -646,7 +615,7 @@ callconv { @extend<varid, "ccall"> | @extend<varid,"stdcall"> | @extend<varid, "
     return {"\r"}
     linefeed {"\n"}
     formfeed {"\f"}
-    vertab {"\v"}
+    vertab {"\x0b"}
     space {" "}
     tab {"\t"}
     uniWhite {std.whitespace}
@@ -658,7 +627,15 @@ callconv { @extend<varid, "ccall"> | @extend<varid,"stdcall"> | @extend<varid, "
     ascSymbol {"!" | "#" | "$" | "%" | "&" | "⋆" | "+" | "." | "/" |
                 "<" | "=" | ">" | "?" | "@" | "\\" | "^" | "|" | "-" |
                 "~" | ":"}
-    digit {std.digit}
+    // Just like ascSymbol, but without backslash which must be escaped in strings.
+    ascStrSymbol {"!" | "#" | "$" | "%" | "&" | "⋆" | "+" | "." | "/" |
+                  "<" | "=" | ">" | "?" | "@" | "^" | "|" | "-" |
+                  "~" | ":"}
+    // Just like ascSymbol, but without colon which introduces a constructor.
+    ascVarSymbol {"!" | "#" | "$" | "%" | "&" | "⋆" | "+" | "." | "/" |
+                  "<" | "=" | ">" | "?" | "@" | "\\" | "^" | "|" | "-" |
+                  "~"}
+      digit {std.digit}
     octit {$[0-7]}  
     hexit {digit | $[A-F] | $[a-f]}
     charesc {"a" | "b" | "f" | "n" | "r" | "t" | "v" | "\\" | "\"" | "\'" | "&"}
@@ -673,16 +650,28 @@ callconv { @extend<varid, "ccall"> | @extend<varid,"stdcall"> | @extend<varid, "
     varid { small (small | large | digit | "\'")* }
     small { std.asciiLowercase | underline}
     large { std.asciiUppercase }
-    varsym { (symbol)+ }
+    varsym { (varSymbol)+ }
     consym { ":" (symbol)+ }
     symbol { ascSymbol }
+    strSymbol { ascStrSymbol }
+    varSymbol { ascVarSymbol }
     any { graphic | space | tab }
     graphic { small | large | symbol | digit | special | quot }
+    strGraphic { small | large | strSymbol | digit | special | quot }
     conid { large (small | large | digit | "\'")* }
     whitechar { newline | vertab | space | tab | uniWhite }
     newline { return linefeed | return | linefeed | formfeed }
-    tycon { conid } 
-    tycls { conid } 
-    tyvar { varid }
-    }
+    octal {(octit)+ }
+    hexadecimal { (hexit)+ }
 
+    string { "\"" (strGraphic | space | escape | gap) "\""}
+    char { "\'" (strGraphic | space | escape) "\'" }
+    escape { "\\" (charesc | ascii | decimal | "o" octal | "x" hexadecimal)}
+    gap { "\\" (whitechar)+ "\\" }
+    integer { decimal | "0o" octal | "0O" octal | "0x" hexadecimal | "0X" hexadecimal }
+    float { decimal "." decimal (exponent)? }
+    exponent { ("e" | "E") ("+" | "-")? decimal }
+
+    @precedence { dashes, varsym }
+    @precedence { float, integer }
+}
