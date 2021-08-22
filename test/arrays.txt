@@ -32,3 +32,5 @@ JsonText(Array(
   True,
   Object,
   Array(String,String)))
+
+Module ModuleName Modid Exports Export Body Impdecls Impdecl Topdecls Topdecl Simpletype Type Btype Atype Context Fielddecl Cdecls Cdecl Gendecl Fpat Pat Exp Decls Decl Alts Alt Gdpat Stmts Stmt Idecls Idecl Fdecl Ftype

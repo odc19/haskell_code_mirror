@@ -8,13 +8,7 @@ let parserWithMetadata = parser.configure({
   props: [
     styleTags({
       Comment: t.lineComment,
-      Ncomment: t.blockComment,
-    }),
-    indentNodeProp.add({
-
-    }),
-    foldNodeProp.add({
-
+      Ncomment: t.blockComment
     })
   ]
 })
